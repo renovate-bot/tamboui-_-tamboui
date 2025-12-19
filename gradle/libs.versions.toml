@@ -1,0 +1,17 @@
+[versions]
+jline = "3.25.1"
+junit = "6.0.1"
+assertj = "3.27.6"
+native-build-tools = "0.11.1"
+
+[libraries]
+jline = { module = "org.jline:jline", version.ref = "jline" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+graalvm-native = { module = "org.graalvm.buildtools:native-gradle-plugin", version.ref = "native-build-tools" }
+
+[bundles]
+testing = ["junit-jupiter", "junit-platform-launcher", "assertj-core"]
+
