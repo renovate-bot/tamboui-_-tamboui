@@ -549,12 +549,12 @@ public class Terminal<B extends Backend> implements AutoCloseable {
 | `List` | Stateful | ✅ Done | Scrollable items with selection |
 | `TextInput` | Stateful | ✅ Done | Single-line text input (JRatatui addition) |
 | `Clear` | Stateless | ❌ TODO | Clears area (for layering widgets) |
-| `Gauge` | Stateless | ❌ TODO | Progress percentage display |
-| `LineGauge` | Stateless | ❌ TODO | Progress as line |
+| `Gauge` | Stateless | ✅ Done | Progress percentage display |
+| `LineGauge` | Stateless | ✅ Done | Progress as line |
 | `Sparkline` | Stateless | ❌ TODO | Single dataset sparkline visualization |
 | `BarChart` | Stateless | ❌ TODO | Multiple datasets as bars |
-| `Table` | Stateful | ❌ TODO | Grid with rows/columns and selection |
-| `Tabs` | Stateful | ❌ TODO | Tab bar with selection |
+| `Table` | Stateful | ✅ Done | Grid with rows/columns and selection |
+| `Tabs` | Stateful | ✅ Done | Tab bar with selection |
 | `Scrollbar` | Stateful | ❌ TODO | Visual scrollbar indicator |
 | `Chart` | Stateless | ❌ TODO | Line/scatter graphs for datasets |
 | `Canvas` | Stateless | ❌ TODO | Arbitrary shape drawing with braille/block characters |
@@ -1562,13 +1562,13 @@ class BlockTest {
 ### Phase 7: Interactive Widgets 🔶 PARTIAL
 - [x] `List` with `ListState`
 - [x] `TextInput` with `TextInputState` (JRatatui addition)
-- [ ] `Table` with `TableState`
-- [ ] `Tabs` with `TabsState`
+- [x] `Table` with `TableState`
+- [x] `Tabs` with `TabsState`
 - [ ] `Scrollbar` with `ScrollbarState`
 
-### Phase 8: Visualization Widgets ❌ TODO
-- [ ] `Gauge` (progress bar)
-- [ ] `LineGauge` (progress line)
+### Phase 8: Visualization Widgets 🔄 IN PROGRESS
+- [x] `Gauge` (progress bar with unicode block characters)
+- [x] `LineGauge` (progress as horizontal line)
 - [ ] `Sparkline`
 - [ ] `BarChart`
 - [ ] `Chart` (line/scatter)
@@ -1589,7 +1589,7 @@ class BlockTest {
 
 **Test Summary:**
 - jratatui-core: 81 tests passing
-- jratatui-widgets: 23 tests passing
+- jratatui-widgets: 122 tests passing
 
 ### Phase 11: Polish & Documentation ❌ TODO
 - [ ] Comprehensive Javadoc
