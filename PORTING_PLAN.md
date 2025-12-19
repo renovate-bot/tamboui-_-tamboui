@@ -1148,14 +1148,42 @@ jratatui/
 │   ├── build.gradle.kts
 │   └── src/main/java/io/github/jratatui/backend/jline/
 │       └── JLineBackend.java
+├── jratatui-tui/             # High-level TUI framework
+│   ├── build.gradle.kts
+│   └── src/main/java/io/github/jratatui/tui/
+│       ├── TuiRunner.java           # Main runner with event loop
+│       ├── TuiConfig.java           # Configuration with builder
+│       ├── EventHandler.java        # Event handler interface
+│       ├── Renderer.java            # Render callback interface
+│       ├── Keys.java                # Key binding helpers
+│       └── event/
+│           ├── Event.java           # Sealed event interface
+│           ├── KeyEvent.java        # Keyboard events
+│           ├── KeyCode.java         # Key codes enum
+│           ├── KeyModifiers.java    # Modifier flags
+│           ├── MouseEvent.java      # Mouse events
+│           ├── MouseEventKind.java  # Mouse event types
+│           ├── MouseButton.java     # Mouse buttons
+│           ├── ResizeEvent.java     # Terminal resize
+│           ├── TickEvent.java       # Animation ticks
+│           └── EventParser.java     # Parses escape sequences
+├── jratatui-picocli/         # Optional PicoCLI integration
+│   ├── build.gradle.kts
+│   └── src/main/java/io/github/jratatui/picocli/
+│       ├── TuiCommand.java          # Base class for TUI commands
+│       └── TuiMixin.java            # Mixin for TUI options
 └── demos/
     ├── basic-demo/
     │   ├── build.gradle.kts
     │   └── src/main/java/io/github/jratatui/demo/
     │       └── Demo.java
-    ├── gauge-demo/           # (example: add when Gauge is implemented)
+    ├── tui-demo/             # TuiRunner framework demo
     │   └── ...
-    └── table-demo/           # (example: add when Table is implemented)
+    ├── picocli-demo/         # PicoCLI integration demo
+    │   └── ...
+    ├── gauge-demo/
+    │   └── ...
+    └── table-demo/
         └── ...
 ```
 
@@ -1574,11 +1602,20 @@ class BlockTest {
 - [x] `Chart` (line/scatter)
 - [x] `Canvas` with shapes
 
-### Phase 9: Advanced Features ⏳ IN PROGRESS
+### Phase 9: Advanced Features ✅ COMPLETE
 - [x] `Calendar` widget (Monthly with DateStyler, CalendarEventStore)
 - [ ] Layout caching (ThreadLocal LRU cache)
 - [ ] Viewport modes (inline, fixed)
 - [ ] Mouse event handling in widgets
+
+### Phase 9.5: High-Level TUI Framework ✅ COMPLETE
+- [x] `jratatui-tui` module with TuiRunner, TuiConfig, event handling
+- [x] Event hierarchy (KeyEvent, MouseEvent, ResizeEvent, TickEvent)
+- [x] EventParser for escape sequences and mouse events
+- [x] Keys utility class for vim-style navigation helpers
+- [x] `jratatui-picocli` module for optional PicoCLI integration
+- [x] TuiCommand base class and TuiMixin for CLI options
+- [x] Demo applications (tui-demo, picocli-demo)
 
 ### Phase 10: Unit Testing ✅ PARTIALLY COMPLETE
 - [x] Core module tests (Rect, Buffer, Style, Layout, Cell, Span, Line, Text, Margin, Color)
@@ -1590,6 +1627,7 @@ class BlockTest {
 **Test Summary:**
 - jratatui-core: 81 tests passing
 - jratatui-widgets: 381 tests passing (includes Calendar: 26 tests)
+- jratatui-tui: 51 tests passing (event types, Keys helpers, TuiConfig)
 
 ### Phase 11: Polish & Documentation ❌ TODO
 - [ ] Comprehensive Javadoc

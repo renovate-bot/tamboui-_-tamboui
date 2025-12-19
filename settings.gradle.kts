@@ -3,7 +3,9 @@ rootProject.name = "jratatui-parent"
 include(
     "jratatui-core",
     "jratatui-widgets",
-    "jratatui-jline"
+    "jratatui-jline",
+    "jratatui-tui",
+    "jratatui-picocli"
 )
 
 File("demos").listFiles()?.forEach {

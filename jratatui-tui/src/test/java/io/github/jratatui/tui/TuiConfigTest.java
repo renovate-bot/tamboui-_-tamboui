@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2025 JRatatui Contributors
+ * SPDX-License-Identifier: MIT
+ */
+package io.github.jratatui.tui;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.*;
+
+class TuiConfigTest {
+
+    @Test
+    @DisplayName("defaults() creates config with sensible defaults")
+    void defaultsCreatesSensibleDefaults() {
+        var config = TuiConfig.defaults();
+
+        assertThat(config.rawMode()).isTrue();
+        assertThat(config.alternateScreen()).isTrue();
+        assertThat(config.hideCursor()).isTrue();
+        assertThat(config.mouseCapture()).isFalse();
+        assertThat(config.pollTimeout()).isEqualTo(Duration.ofMillis(100));
+        assertThat(config.ticksEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("withAnimation() enables ticks at specified rate")
+    void withAnimationEnablesTicks() {
+        var config = TuiConfig.withAnimation(Duration.ofMillis(16));
+
+        assertThat(config.ticksEnabled()).isTrue();
+        assertThat(config.tickRate()).isEqualTo(Duration.ofMillis(16));
+    }
+
+    @Test
+    @DisplayName("builder creates config with custom values")
+    void builderCreatesCustomConfig() {
+        var config = TuiConfig.builder()
+                .rawMode(false)
+                .alternateScreen(false)
+                .hideCursor(false)
+                .mouseCapture(true)
+                .pollTimeout(Duration.ofMillis(50))
+                .tickRate(Duration.ofMillis(33))
+                .build();
+
+        assertThat(config.rawMode()).isFalse();
+        assertThat(config.alternateScreen()).isFalse();
+        assertThat(config.hideCursor()).isFalse();
+        assertThat(config.mouseCapture()).isTrue();
+        assertThat(config.pollTimeout()).isEqualTo(Duration.ofMillis(50));
+        assertThat(config.tickRate()).isEqualTo(Duration.ofMillis(33));
+        assertThat(config.ticksEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("builder starts with default values")
+    void builderStartsWithDefaults() {
+        var config = TuiConfig.builder().build();
+
+        assertThat(config.rawMode()).isTrue();
+        assertThat(config.alternateScreen()).isTrue();
+        assertThat(config.hideCursor()).isTrue();
+        assertThat(config.mouseCapture()).isFalse();
+    }
+
+    @Test
+    @DisplayName("builder allows partial customization")
+    void builderAllowsPartialCustomization() {
+        var config = TuiConfig.builder()
+                .mouseCapture(true)
+                .build();
+
+        assertThat(config.rawMode()).isTrue();
+        assertThat(config.mouseCapture()).isTrue();
+    }
+
+    @Test
+    @DisplayName("ticksEnabled returns false when tickRate is null")
+    void ticksEnabledFalseWhenNullRate() {
+        var config = TuiConfig.builder().build();
+        assertThat(config.ticksEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("ticksEnabled returns true when tickRate is set")
+    void ticksEnabledTrueWhenRateSet() {
+        var config = TuiConfig.builder()
+                .tickRate(Duration.ofMillis(16))
+                .build();
+        assertThat(config.ticksEnabled()).isTrue();
+    }
+}
