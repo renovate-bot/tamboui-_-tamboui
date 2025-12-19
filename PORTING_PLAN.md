@@ -555,7 +555,7 @@ public class Terminal<B extends Backend> implements AutoCloseable {
 | `BarChart` | Stateless | ❌ TODO | Multiple datasets as bars |
 | `Table` | Stateful | ✅ Done | Grid with rows/columns and selection |
 | `Tabs` | Stateful | ✅ Done | Tab bar with selection |
-| `Scrollbar` | Stateful | ❌ TODO | Visual scrollbar indicator |
+| `Scrollbar` | Stateful | ✅ Done | Visual scrollbar indicator |
 | `Chart` | Stateless | ❌ TODO | Line/scatter graphs for datasets |
 | `Canvas` | Stateless | ❌ TODO | Arbitrary shape drawing with braille/block characters |
 | `Calendar` | Stateful | ❌ TODO | Monthly calendar view (optional feature) |
@@ -1559,12 +1559,12 @@ class BlockTest {
 - [x] `Paragraph` (text wrapping, alignment)
 - [ ] `Clear`
 
-### Phase 7: Interactive Widgets 🔶 PARTIAL
+### Phase 7: Interactive Widgets ✅ COMPLETE
 - [x] `List` with `ListState`
 - [x] `TextInput` with `TextInputState` (JRatatui addition)
 - [x] `Table` with `TableState`
 - [x] `Tabs` with `TabsState`
-- [ ] `Scrollbar` with `ScrollbarState`
+- [x] `Scrollbar` with `ScrollbarState`
 
 ### Phase 8: Visualization Widgets 🔄 IN PROGRESS
 - [x] `Gauge` (progress bar with unicode block characters)
@@ -1589,7 +1589,7 @@ class BlockTest {
 
 **Test Summary:**
 - jratatui-core: 81 tests passing
-- jratatui-widgets: 122 tests passing
+- jratatui-widgets: 165 tests passing
 
 ### Phase 11: Polish & Documentation ❌ TODO
 - [ ] Comprehensive Javadoc
