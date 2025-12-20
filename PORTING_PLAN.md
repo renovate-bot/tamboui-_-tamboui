@@ -1242,7 +1242,7 @@ plugins {
 }
 
 allprojects {
-    group = "io.github.glimt"
+    group = "ink.glimt"
     version = "0.1.0-SNAPSHOT"
 
     repositories {
@@ -1339,13 +1339,13 @@ dependencies {
 
 ```kotlin
 plugins {
-    id("io.github.glimt.demo-project")
+    id("ink.glimt.demo-project")
 }
 
 description = "Demo TUI application using Glimt"
 
 application {
-    mainClass.set("io.github.glimt.demo.Demo")
+    mainClass.set("ink.glimt.demo.Demo")
 }
 ```
 
@@ -1402,7 +1402,7 @@ subprojects {
 #### Rect Tests (glimt-core)
 
 ```java
-package io.github.glimt.layout;
+package ink.glimt.layout;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -1447,10 +1447,10 @@ class RectTest {
 #### Buffer Tests (glimt-core)
 
 ```java
-package io.github.glimt.buffer;
+package ink.glimt.buffer;
 
-import io.github.glimt.layout.Rect;
-import io.github.glimt.style.Style;
+import ink.glimt.layout.Rect;
+import ink.glimt.style.Style;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
@@ -1482,10 +1482,10 @@ class BufferTest {
 #### Widget Tests (glimt-widgets)
 
 ```java
-package io.github.glimt.widgets.block;
+package ink.glimt.widgets.block;
 
-import io.github.glimt.buffer.Buffer;
-import io.github.glimt.layout.Rect;
+import ink.glimt.buffer.Buffer;
+import ink.glimt.layout.Rect;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
@@ -1641,16 +1641,16 @@ class BlockTest {
 ## 13. Example Application
 
 ```java
-package io.github.glimt.examples;
+package ink.glimt.examples;
 
-import io.github.glimt.backend.jline.JLineBackend;
-import io.github.glimt.layout.*;
-import io.github.glimt.style.*;
-import io.github.glimt.terminal.*;
-import io.github.glimt.text.*;
-import io.github.glimt.widgets.*;
-import io.github.glimt.widgets.block.*;
-import io.github.glimt.widgets.paragraph.*;
+import ink.glimt.backend.jline.JLineBackend;
+import ink.glimt.layout.*;
+import ink.glimt.style.*;
+import ink.glimt.terminal.*;
+import ink.glimt.text.*;
+import ink.glimt.widgets.*;
+import ink.glimt.widgets.block.*;
+import ink.glimt.widgets.paragraph.*;
 
 import java.io.IOException;
 

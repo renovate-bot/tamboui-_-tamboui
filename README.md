@@ -42,10 +42,10 @@ The `glimt-tui` module provides a high-level framework that eliminates boilerpla
 
 [examples/HelloWorld.java](examples/HelloWorld.java):
 ```java
-import io.github.glimt.tui.TuiRunner;
-import io.github.glimt.tui.Keys;
-import io.github.glimt.widgets.paragraph.Paragraph;
-import io.github.glimt.text.Text;
+import ink.glimt.tui.TuiRunner;
+import ink.glimt.tui.Keys;
+import ink.glimt.widgets.paragraph.Paragraph;
+import ink.glimt.text.Text;
 
 public class HelloWorld {
     public static void main(String[] args) throws Exception {
@@ -74,8 +74,8 @@ public class HelloWorld {
 
 
 ```java
-import io.github.glimt.tui.TuiConfig;
-import io.github.glimt.tui.TuiRunner;
+import ink.glimt.tui.TuiConfig;
+import ink.glimt.tui.TuiRunner;
 import java.time.Duration;
 
 var config = TuiConfig.builder()
@@ -99,7 +99,7 @@ try (var tui = TuiRunner.create(config)) {
 ### With PicoCLI Integration
 
 ```java
-import io.github.glimt.picocli.TuiCommand;
+import ink.glimt.picocli.TuiCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -230,8 +230,8 @@ canvas(-10, 10, -10, 10)
 For more control, use the terminal directly:
 
 ```java
-import io.github.glimt.backend.jline.JLineBackend;
-import io.github.glimt.terminal.Terminal;
+import ink.glimt.backend.jline.JLineBackend;
+import ink.glimt.terminal.Terminal;
 
 try (var backend = new JLineBackend()) {
     backend.enableRawMode();
@@ -345,7 +345,7 @@ All standard ratatui widgets are implemented:
 The `Keys` class provides helpers for common key patterns:
 
 ```java
-import static io.github.glimt.tui.Keys.*;
+import static ink.glimt.tui.Keys.*;
 
 // Quit patterns
 isQuit(event)      // q, Q, or Ctrl+C
