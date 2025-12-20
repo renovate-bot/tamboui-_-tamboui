@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  * handles the transformation from canvas space to terminal cells.
  *
  * <pre>{@code
- * var canvas = Canvas.builder()
+ * Canvas canvas = Canvas.builder()
  *     .xBounds(-180, 180)
  *     .yBounds(-90, 90)
  *     .marker(Marker.BRAILLE)

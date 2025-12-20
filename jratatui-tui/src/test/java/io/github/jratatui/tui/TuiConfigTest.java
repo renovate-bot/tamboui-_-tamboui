@@ -16,7 +16,7 @@ class TuiConfigTest {
     @Test
     @DisplayName("defaults() creates config with sensible defaults")
     void defaultsCreatesSensibleDefaults() {
-        var config = TuiConfig.defaults();
+        TuiConfig config = TuiConfig.defaults();
 
         assertThat(config.rawMode()).isTrue();
         assertThat(config.alternateScreen()).isTrue();
@@ -29,7 +29,7 @@ class TuiConfigTest {
     @Test
     @DisplayName("withAnimation() enables ticks at specified rate")
     void withAnimationEnablesTicks() {
-        var config = TuiConfig.withAnimation(Duration.ofMillis(16));
+        TuiConfig config = TuiConfig.withAnimation(Duration.ofMillis(16));
 
         assertThat(config.ticksEnabled()).isTrue();
         assertThat(config.tickRate()).isEqualTo(Duration.ofMillis(16));
@@ -38,7 +38,7 @@ class TuiConfigTest {
     @Test
     @DisplayName("builder creates config with custom values")
     void builderCreatesCustomConfig() {
-        var config = TuiConfig.builder()
+        TuiConfig config = TuiConfig.builder()
                 .rawMode(false)
                 .alternateScreen(false)
                 .hideCursor(false)
@@ -59,7 +59,7 @@ class TuiConfigTest {
     @Test
     @DisplayName("builder starts with default values")
     void builderStartsWithDefaults() {
-        var config = TuiConfig.builder().build();
+        TuiConfig config = TuiConfig.builder().build();
 
         assertThat(config.rawMode()).isTrue();
         assertThat(config.alternateScreen()).isTrue();
@@ -70,7 +70,7 @@ class TuiConfigTest {
     @Test
     @DisplayName("builder allows partial customization")
     void builderAllowsPartialCustomization() {
-        var config = TuiConfig.builder()
+        TuiConfig config = TuiConfig.builder()
                 .mouseCapture(true)
                 .build();
 
@@ -81,14 +81,14 @@ class TuiConfigTest {
     @Test
     @DisplayName("ticksEnabled returns false when tickRate is null")
     void ticksEnabledFalseWhenNullRate() {
-        var config = TuiConfig.builder().build();
+        TuiConfig config = TuiConfig.builder().build();
         assertThat(config.ticksEnabled()).isFalse();
     }
 
     @Test
     @DisplayName("ticksEnabled returns true when tickRate is set")
     void ticksEnabledTrueWhenRateSet() {
-        var config = TuiConfig.builder()
+        TuiConfig config = TuiConfig.builder()
                 .tickRate(Duration.ofMillis(16))
                 .build();
         assertThat(config.ticksEnabled()).isTrue();

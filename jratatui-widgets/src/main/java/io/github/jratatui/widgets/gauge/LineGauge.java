@@ -21,7 +21,7 @@ import java.util.Optional;
  * characters to show progress. It's more compact and suitable for status bars.
  *
  * <pre>{@code
- * var gauge = LineGauge.builder()
+ * LineGauge gauge = LineGauge.builder()
  *     .ratio(0.75)
  *     .label("Progress: ")
  *     .lineSet(LineGauge.THICK)

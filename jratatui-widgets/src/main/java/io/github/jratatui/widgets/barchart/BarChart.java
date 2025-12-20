@@ -24,12 +24,12 @@ import java.util.List;
  *
  * <pre>{@code
  * // Simple bar chart with values
- * var chart = BarChart.builder()
+ * BarChart chart = BarChart.builder()
  *     .data(BarGroup.of(10, 20, 30, 40))
  *     .build();
  *
  * // Grouped bar chart with labels
- * var chart = BarChart.builder()
+ * BarChart chart2 = BarChart.builder()
  *     .data(
  *         BarGroup.of("Q1", Bar.of(100, "Jan"), Bar.of(150, "Feb")),
  *         BarGroup.of("Q2", Bar.of(120, "Mar"), Bar.of(180, "Apr"))

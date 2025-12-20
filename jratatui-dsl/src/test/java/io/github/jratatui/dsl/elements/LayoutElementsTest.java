@@ -29,7 +29,7 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Panel fluent API chains correctly")
         void fluentApiChaining() {
-            var element = panel("Title", text("Content"))
+            Panel element = panel("Title", text("Content"))
                 .rounded()
                 .borderColor(Color.GREEN)
                 .fg(Color.WHITE)
@@ -41,23 +41,23 @@ class LayoutElementsTest {
         @Test
         @DisplayName("panel() creates empty panel")
         void emptyPanel() {
-            var element = panel();
+            Panel element = panel();
             assertThat(element).isNotNull();
         }
 
         @Test
         @DisplayName("panel(Element...) creates panel without title")
         void panelWithoutTitle() {
-            var element = panel(text("Content"));
+            Panel element = panel(text("Content"));
             assertThat(element).isNotNull();
         }
 
         @Test
         @DisplayName("Panel renders border")
         void rendersBorder() {
-            var area = new Rect(0, 0, 20, 5);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 20, 5);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             panel("Test", text("Content"))
                 .rounded()
@@ -73,9 +73,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Panel renders title")
         void rendersTitle() {
-            var area = new Rect(0, 0, 20, 3);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 20, 3);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             panel("Title", text("X"))
                 .render(frame, area, RenderContext.empty());
@@ -88,9 +88,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Empty area does not render")
         void emptyAreaNoRender() {
-            var emptyArea = new Rect(0, 0, 0, 0);
-            var buffer = Buffer.empty(new Rect(0, 0, 10, 5));
-            var frame = Frame.forTesting(buffer);
+            Rect emptyArea = new Rect(0, 0, 0, 0);
+            Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 5));
+            Frame frame = Frame.forTesting(buffer);
 
             panel("Title").render(frame, emptyArea, RenderContext.empty());
         }
@@ -98,9 +98,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Panel with border color")
         void withBorderColor() {
-            var area = new Rect(0, 0, 10, 3);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 10, 3);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             panel("X")
                 .borderColor(Color.RED)
@@ -117,7 +117,7 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Row fluent API chains correctly")
         void fluentApiChaining() {
-            var element = row(text("Left"), spacer(), text("Right"))
+            Row element = row(text("Left"), spacer(), text("Right"))
                 .spacing(1)
                 .fg(Color.WHITE);
 
@@ -127,16 +127,16 @@ class LayoutElementsTest {
         @Test
         @DisplayName("row() creates empty row")
         void emptyRow() {
-            var element = row();
+            Row element = row();
             assertThat(element).isNotNull();
         }
 
         @Test
         @DisplayName("Row renders children horizontally")
         void rendersHorizontally() {
-            var area = new Rect(0, 0, 20, 1);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 20, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             row(
                 text("A").length(5),
@@ -150,9 +150,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Empty area does not render")
         void emptyAreaNoRender() {
-            var emptyArea = new Rect(0, 0, 0, 0);
-            var buffer = Buffer.empty(new Rect(0, 0, 10, 1));
-            var frame = Frame.forTesting(buffer);
+            Rect emptyArea = new Rect(0, 0, 0, 0);
+            Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 1));
+            Frame frame = Frame.forTesting(buffer);
 
             row(text("A")).render(frame, emptyArea, RenderContext.empty());
         }
@@ -160,9 +160,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Row with fill children distributes space")
         void fillDistribution() {
-            var area = new Rect(0, 0, 20, 1);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 20, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             row(
                 text("L").fill(),
@@ -181,7 +181,7 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Column fluent API chains correctly")
         void fluentApiChaining() {
-            var element = column(text("Top"), spacer(), text("Bottom"))
+            Column element = column(text("Top"), spacer(), text("Bottom"))
                 .spacing(1)
                 .fg(Color.WHITE);
 
@@ -191,16 +191,16 @@ class LayoutElementsTest {
         @Test
         @DisplayName("column() creates empty column")
         void emptyColumn() {
-            var element = column();
+            Column element = column();
             assertThat(element).isNotNull();
         }
 
         @Test
         @DisplayName("Column renders children vertically")
         void rendersVertically() {
-            var area = new Rect(0, 0, 10, 5);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 10, 5);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             column(
                 text("A").length(1),
@@ -214,9 +214,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Empty area does not render")
         void emptyAreaNoRender() {
-            var emptyArea = new Rect(0, 0, 0, 0);
-            var buffer = Buffer.empty(new Rect(0, 0, 10, 5));
-            var frame = Frame.forTesting(buffer);
+            Rect emptyArea = new Rect(0, 0, 0, 0);
+            Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 5));
+            Frame frame = Frame.forTesting(buffer);
 
             column(text("A")).render(frame, emptyArea, RenderContext.empty());
         }
@@ -229,23 +229,23 @@ class LayoutElementsTest {
         @Test
         @DisplayName("spacer() creates fill spacer")
         void fillSpacer() {
-            var element = spacer();
+            Spacer element = spacer();
             assertThat(element.constraint()).isEqualTo(Constraint.fill());
         }
 
         @Test
         @DisplayName("spacer(int) creates fixed spacer")
         void fixedSpacer() {
-            var element = spacer(10);
+            Spacer element = spacer(10);
             assertThat(element.constraint()).isEqualTo(Constraint.length(10));
         }
 
         @Test
         @DisplayName("Spacer renders empty space")
         void rendersEmptySpace() {
-            var area = new Rect(0, 0, 10, 1);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 10, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             spacer().render(frame, area, RenderContext.empty());
 
@@ -262,9 +262,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Nested row in column renders correctly")
         void nestedRowInColumn() {
-            var area = new Rect(0, 0, 20, 3);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 20, 3);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             column(
                 row(text("A"), text("B")),
@@ -278,9 +278,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Panel with row content")
         void panelWithRow() {
-            var area = new Rect(0, 0, 30, 5);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 30, 5);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             panel("Header",
                 row(
@@ -295,9 +295,9 @@ class LayoutElementsTest {
         @Test
         @DisplayName("Complex nested layout")
         void complexNestedLayout() {
-            var area = new Rect(0, 0, 40, 10);
-            var buffer = Buffer.empty(area);
-            var frame = Frame.forTesting(buffer);
+            Rect area = new Rect(0, 0, 40, 10);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
 
             column(
                 panel("Title", text("Content")).rounded(),

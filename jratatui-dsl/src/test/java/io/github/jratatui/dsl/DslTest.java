@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 import static io.github.jratatui.dsl.Dsl.*;
@@ -46,21 +47,21 @@ class DslTest {
         @Test
         @DisplayName("text(String) creates TextElement")
         void textWithString() {
-            var element = text("Hello");
+            TextElement element = text("Hello");
             assertThat(element).isInstanceOf(TextElement.class);
         }
 
         @Test
         @DisplayName("text(Object) creates TextElement with toString")
         void textWithObject() {
-            var element = text(42);
+            TextElement element = text(42);
             assertThat(element).isInstanceOf(TextElement.class);
         }
 
         @Test
         @DisplayName("text(Object...) concatenates values")
         void textWithMultipleValues() {
-            var element = text("Count: ", 42, " items");
+            TextElement element = text("Count: ", 42, " items");
             assertThat(element).isInstanceOf(TextElement.class);
         }
     }
@@ -72,49 +73,49 @@ class DslTest {
         @Test
         @DisplayName("panel() creates empty Panel")
         void emptyPanel() {
-            var element = panel();
+            Panel element = panel();
             assertThat(element).isInstanceOf(Panel.class);
         }
 
         @Test
         @DisplayName("panel(String, Element...) creates Panel with title and children")
         void panelWithTitleAndChildren() {
-            var element = panel("Title", text("content"));
+            Panel element = panel("Title", text("content"));
             assertThat(element).isInstanceOf(Panel.class);
         }
 
         @Test
         @DisplayName("row() creates empty Row")
         void emptyRow() {
-            var element = row();
+            Row element = row();
             assertThat(element).isInstanceOf(Row.class);
         }
 
         @Test
         @DisplayName("row(Element...) creates Row with children")
         void rowWithChildren() {
-            var element = row(text("left"), text("right"));
+            Row element = row(text("left"), text("right"));
             assertThat(element).isInstanceOf(Row.class);
         }
 
         @Test
         @DisplayName("column() creates empty Column")
         void emptyColumn() {
-            var element = column();
+            Column element = column();
             assertThat(element).isInstanceOf(Column.class);
         }
 
         @Test
         @DisplayName("column(Element...) creates Column with children")
         void columnWithChildren() {
-            var element = column(text("top"), text("bottom"));
+            Column element = column(text("top"), text("bottom"));
             assertThat(element).isInstanceOf(Column.class);
         }
 
         @Test
         @DisplayName("spacer() creates fill Spacer")
         void fillSpacer() {
-            var element = spacer();
+            Spacer element = spacer();
             assertThat(element).isInstanceOf(Spacer.class);
             assertThat(element.constraint()).isEqualTo(Constraint.fill());
         }
@@ -122,7 +123,7 @@ class DslTest {
         @Test
         @DisplayName("spacer(int) creates fixed Spacer")
         void fixedSpacer() {
-            var element = spacer(5);
+            Spacer element = spacer(5);
             assertThat(element).isInstanceOf(Spacer.class);
             assertThat(element.constraint()).isEqualTo(Constraint.length(5));
         }
@@ -182,21 +183,21 @@ class DslTest {
         @Test
         @DisplayName("gauge() creates empty GaugeElement")
         void emptyGauge() {
-            var element = gauge();
+            GaugeElement element = gauge();
             assertThat(element).isInstanceOf(GaugeElement.class);
         }
 
         @Test
         @DisplayName("gauge(double) creates GaugeElement with ratio")
         void gaugeWithRatio() {
-            var element = gauge(0.75);
+            GaugeElement element = gauge(0.75);
             assertThat(element).isInstanceOf(GaugeElement.class);
         }
 
         @Test
         @DisplayName("gauge(int) creates GaugeElement with percent")
         void gaugeWithPercent() {
-            var element = gauge(75);
+            GaugeElement element = gauge(75);
             assertThat(element).isInstanceOf(GaugeElement.class);
         }
     }
@@ -208,21 +209,21 @@ class DslTest {
         @Test
         @DisplayName("lineGauge() creates empty LineGaugeElement")
         void emptyLineGauge() {
-            var element = lineGauge();
+            LineGaugeElement element = lineGauge();
             assertThat(element).isInstanceOf(LineGaugeElement.class);
         }
 
         @Test
         @DisplayName("lineGauge(double) creates LineGaugeElement with ratio")
         void lineGaugeWithRatio() {
-            var element = lineGauge(0.5);
+            LineGaugeElement element = lineGauge(0.5);
             assertThat(element).isInstanceOf(LineGaugeElement.class);
         }
 
         @Test
         @DisplayName("lineGauge(int) creates LineGaugeElement with percent")
         void lineGaugeWithPercent() {
-            var element = lineGauge(50);
+            LineGaugeElement element = lineGauge(50);
             assertThat(element).isInstanceOf(LineGaugeElement.class);
         }
     }
@@ -234,28 +235,28 @@ class DslTest {
         @Test
         @DisplayName("sparkline() creates empty SparklineElement")
         void emptySparkline() {
-            var element = sparkline();
+            SparklineElement element = sparkline();
             assertThat(element).isInstanceOf(SparklineElement.class);
         }
 
         @Test
         @DisplayName("sparkline(long...) creates SparklineElement with data")
         void sparklineWithLongData() {
-            var element = sparkline(1L, 2L, 3L, 4L, 5L);
+            SparklineElement element = sparkline(1L, 2L, 3L, 4L, 5L);
             assertThat(element).isInstanceOf(SparklineElement.class);
         }
 
         @Test
         @DisplayName("sparkline(int...) creates SparklineElement with data")
         void sparklineWithIntData() {
-            var element = sparkline(1, 2, 3, 4, 5);
+            SparklineElement element = sparkline(1, 2, 3, 4, 5);
             assertThat(element).isInstanceOf(SparklineElement.class);
         }
 
         @Test
         @DisplayName("sparkline(Collection) creates SparklineElement with data")
         void sparklineWithCollection() {
-            var element = sparkline(List.of(1, 2, 3));
+            SparklineElement element = sparkline(Arrays.asList(1, 2, 3));
             assertThat(element).isInstanceOf(SparklineElement.class);
         }
     }
@@ -267,21 +268,21 @@ class DslTest {
         @Test
         @DisplayName("list() creates empty ListElement")
         void emptyList() {
-            var element = list();
+            ListElement element = list();
             assertThat(element).isInstanceOf(ListElement.class);
         }
 
         @Test
         @DisplayName("list(String...) creates ListElement with items")
         void listWithItems() {
-            var element = list("Item 1", "Item 2", "Item 3");
+            ListElement element = list("Item 1", "Item 2", "Item 3");
             assertThat(element).isInstanceOf(ListElement.class);
         }
 
         @Test
         @DisplayName("list(List<String>) creates ListElement with items")
         void listWithItemsList() {
-            var element = list(List.of("A", "B", "C"));
+            ListElement element = list(Arrays.asList("A", "B", "C"));
             assertThat(element).isInstanceOf(ListElement.class);
         }
     }
@@ -293,7 +294,7 @@ class DslTest {
         @Test
         @DisplayName("table() creates empty TableElement")
         void emptyTable() {
-            var element = table();
+            TableElement element = table();
             assertThat(element).isInstanceOf(TableElement.class);
         }
     }
@@ -305,21 +306,21 @@ class DslTest {
         @Test
         @DisplayName("tabs() creates empty TabsElement")
         void emptyTabs() {
-            var element = tabs();
+            TabsElement element = tabs();
             assertThat(element).isInstanceOf(TabsElement.class);
         }
 
         @Test
         @DisplayName("tabs(String...) creates TabsElement with titles")
         void tabsWithTitles() {
-            var element = tabs("Home", "Settings", "About");
+            TabsElement element = tabs("Home", "Settings", "About");
             assertThat(element).isInstanceOf(TabsElement.class);
         }
 
         @Test
         @DisplayName("tabs(List<String>) creates TabsElement with titles")
         void tabsWithTitlesList() {
-            var element = tabs(List.of("Tab 1", "Tab 2"));
+            TabsElement element = tabs(Arrays.asList("Tab 1", "Tab 2"));
             assertThat(element).isInstanceOf(TabsElement.class);
         }
     }
@@ -331,15 +332,15 @@ class DslTest {
         @Test
         @DisplayName("textInput() creates TextInputElement with new state")
         void emptyTextInput() {
-            var element = textInput();
+            TextInputElement element = textInput();
             assertThat(element).isInstanceOf(TextInputElement.class);
         }
 
         @Test
         @DisplayName("textInput(TextInputState) creates TextInputElement with state")
         void textInputWithState() {
-            var state = new TextInputState();
-            var element = textInput(state);
+            TextInputState state = new TextInputState();
+            TextInputElement element = textInput(state);
             assertThat(element).isInstanceOf(TextInputElement.class);
         }
     }
@@ -351,14 +352,14 @@ class DslTest {
         @Test
         @DisplayName("barChart() creates empty BarChartElement")
         void emptyBarChart() {
-            var element = barChart();
+            BarChartElement element = barChart();
             assertThat(element).isInstanceOf(BarChartElement.class);
         }
 
         @Test
         @DisplayName("barChart(long...) creates BarChartElement with data")
         void barChartWithData() {
-            var element = barChart(10L, 20L, 30L);
+            BarChartElement element = barChart(10L, 20L, 30L);
             assertThat(element).isInstanceOf(BarChartElement.class);
         }
     }
@@ -370,7 +371,7 @@ class DslTest {
         @Test
         @DisplayName("chart() creates empty ChartElement")
         void emptyChart() {
-            var element = chart();
+            ChartElement element = chart();
             assertThat(element).isInstanceOf(ChartElement.class);
         }
     }
@@ -382,14 +383,14 @@ class DslTest {
         @Test
         @DisplayName("canvas() creates CanvasElement with default bounds")
         void emptyCanvas() {
-            var element = canvas();
+            CanvasElement element = canvas();
             assertThat(element).isInstanceOf(CanvasElement.class);
         }
 
         @Test
         @DisplayName("canvas(bounds) creates CanvasElement with custom bounds")
         void canvasWithBounds() {
-            var element = canvas(-10, 10, -10, 10);
+            CanvasElement element = canvas(-10, 10, -10, 10);
             assertThat(element).isInstanceOf(CanvasElement.class);
         }
     }
@@ -401,14 +402,14 @@ class DslTest {
         @Test
         @DisplayName("calendar() creates CalendarElement for current month")
         void calendarForCurrentMonth() {
-            var element = calendar();
+            CalendarElement element = calendar();
             assertThat(element).isInstanceOf(CalendarElement.class);
         }
 
         @Test
         @DisplayName("calendar(LocalDate) creates CalendarElement for specific month")
         void calendarForSpecificMonth() {
-            var element = calendar(LocalDate.of(2025, 6, 15));
+            CalendarElement element = calendar(LocalDate.of(2025, 6, 15));
             assertThat(element).isInstanceOf(CalendarElement.class);
         }
     }
@@ -420,22 +421,22 @@ class DslTest {
         @Test
         @DisplayName("scrollbar() creates ScrollbarElement")
         void emptyScrollbar() {
-            var element = scrollbar();
+            ScrollbarElement element = scrollbar();
             assertThat(element).isInstanceOf(ScrollbarElement.class);
         }
 
         @Test
         @DisplayName("scrollbar(ScrollbarState) creates ScrollbarElement with state")
         void scrollbarWithState() {
-            var state = new ScrollbarState().contentLength(100);
-            var element = scrollbar(state);
+            ScrollbarState state = new ScrollbarState().contentLength(100);
+            ScrollbarElement element = scrollbar(state);
             assertThat(element).isInstanceOf(ScrollbarElement.class);
         }
 
         @Test
         @DisplayName("scrollbar(int, int, int) creates ScrollbarElement with parameters")
         void scrollbarWithParameters() {
-            var element = scrollbar(100, 20, 50);
+            ScrollbarElement element = scrollbar(100, 20, 50);
             assertThat(element).isInstanceOf(ScrollbarElement.class);
         }
     }
@@ -447,7 +448,7 @@ class DslTest {
         @Test
         @DisplayName("lazy(Supplier) creates lazy element")
         void lazyElement() {
-            var element = lazy(() -> text("Dynamic"));
+            io.github.jratatui.dsl.element.Element element = lazy(() -> text("Dynamic"));
             assertThat(element).isNotNull();
         }
 
@@ -455,7 +456,7 @@ class DslTest {
         @DisplayName("panel with Supplier creates lazy content")
         void panelWithLazyContent() {
             int[] counter = {0};
-            var element = panel("Counter", () -> text("Count: " + (++counter[0])));
+            Panel element = panel("Counter", () -> text("Count: " + (++counter[0])));
             assertThat(element).isInstanceOf(Panel.class);
         }
     }

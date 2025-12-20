@@ -25,14 +25,14 @@ import java.util.Optional;
  * The selected tab is highlighted using the highlight style.
  *
  * <pre>{@code
- * var tabs = Tabs.builder()
+ * Tabs tabs = Tabs.builder()
  *     .titles("Home", "Settings", "About")
  *     .highlightStyle(Style.EMPTY.fg(Color.YELLOW).bold())
  *     .divider(" | ")
  *     .block(Block.bordered())
  *     .build();
  *
- * var state = new TabsState(0); // Select first tab
+ * TabsState state = new TabsState(0); // Select first tab
  * frame.renderStatefulWidget(tabs, area, state);
  * }</pre>
  */

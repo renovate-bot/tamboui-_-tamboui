@@ -24,13 +24,13 @@ import java.util.Objects;
  *
  * <pre>{@code
  * // Create a vertical scrollbar
- * var scrollbar = Scrollbar.builder()
+ * Scrollbar scrollbar = Scrollbar.builder()
  *     .orientation(ScrollbarOrientation.VERTICAL_RIGHT)
  *     .thumbStyle(Style.EMPTY.fg(Color.YELLOW))
  *     .build();
  *
  * // Create state for 100 items
- * var state = new ScrollbarState()
+ * ScrollbarState state = new ScrollbarState()
  *     .contentLength(100)
  *     .position(currentScrollPosition);
  *

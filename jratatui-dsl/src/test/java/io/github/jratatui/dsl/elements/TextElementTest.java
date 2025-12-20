@@ -25,7 +25,7 @@ class TextElementTest {
     @Test
     @DisplayName("TextElement fluent API chains correctly")
     void fluentApiChaining() {
-        var element = text("Hello, World!")
+        TextElement element = text("Hello, World!")
             .bold()
             .italic()
             .underlined()
@@ -39,21 +39,21 @@ class TextElementTest {
     @Test
     @DisplayName("text(String) creates element with content")
     void textWithString() {
-        var element = text("Hello");
+        TextElement element = text("Hello");
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("text(Object) uses toString")
     void textWithObject() {
-        var element = text(42);
+        TextElement element = text(42);
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("Color shortcuts work")
     void colorShortcuts() {
-        var element = text("Colored")
+        TextElement element = text("Colored")
             .red()
             .onBlue();
 
@@ -63,9 +63,9 @@ class TextElementTest {
     @Test
     @DisplayName("TextElement renders to buffer")
     void rendersToBuffer() {
-        var area = new Rect(0, 0, 20, 1);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 20, 1);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         text("Hello")
             .render(frame, area, RenderContext.empty());
@@ -80,9 +80,9 @@ class TextElementTest {
     @Test
     @DisplayName("TextElement with style renders correctly")
     void rendersWithStyle() {
-        var area = new Rect(0, 0, 10, 1);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 10, 1);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         text("Hi")
             .bold()
@@ -97,9 +97,9 @@ class TextElementTest {
     @Test
     @DisplayName("Empty area does not render")
     void emptyAreaNoRender() {
-        var emptyArea = new Rect(0, 0, 0, 0);
-        var buffer = Buffer.empty(new Rect(0, 0, 10, 1));
-        var frame = Frame.forTesting(buffer);
+        Rect emptyArea = new Rect(0, 0, 0, 0);
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 1));
+        Frame frame = Frame.forTesting(buffer);
 
         // Should not throw
         text("Test").render(frame, emptyArea, RenderContext.empty());
@@ -108,35 +108,35 @@ class TextElementTest {
     @Test
     @DisplayName("length() sets constraint")
     void lengthConstraint() {
-        var element = text("Test").length(10);
+        TextElement element = text("Test").length(10);
         assertThat(element.constraint()).isEqualTo(Constraint.length(10));
     }
 
     @Test
     @DisplayName("percent() sets constraint")
     void percentConstraint() {
-        var element = text("Test").percent(50);
+        TextElement element = text("Test").percent(50);
         assertThat(element.constraint()).isEqualTo(Constraint.percentage(50));
     }
 
     @Test
     @DisplayName("fill() sets constraint")
     void fillConstraint() {
-        var element = text("Test").fill();
+        TextElement element = text("Test").fill();
         assertThat(element.constraint()).isEqualTo(Constraint.fill());
     }
 
     @Test
     @DisplayName("null value renders as empty string")
     void nullValue() {
-        var element = text((Object) null);
+        TextElement element = text((Object) null);
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("All color methods work")
     void allColorMethods() {
-        var element = text("Colors")
+        TextElement element = text("Colors")
             .cyan()
             .yellow()
             .green()
@@ -152,7 +152,7 @@ class TextElementTest {
     @Test
     @DisplayName("Background color methods work")
     void backgroundColorMethods() {
-        var element = text("BG")
+        TextElement element = text("BG")
             .onRed()
             .onGreen()
             .onYellow()

@@ -25,8 +25,8 @@ class TableElementTest {
     @Test
     @DisplayName("TableElement fluent API chains correctly")
     void fluentApiChaining() {
-        var state = new TableState();
-        var element = table()
+        TableState state = new TableState();
+        TableElement element = table()
             .header("Name", "Age", "City")
             .row("Alice", "30", "NYC")
             .row("Bob", "25", "LA")
@@ -43,21 +43,21 @@ class TableElementTest {
     @Test
     @DisplayName("table() creates empty element")
     void emptyTable() {
-        var element = table();
+        TableElement element = table();
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("header() sets column headers")
     void headerMethod() {
-        var element = table().header("Col1", "Col2", "Col3");
+        TableElement element = table().header("Col1", "Col2", "Col3");
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("row() adds data rows")
     void rowMethod() {
-        var element = table()
+        TableElement element = table()
             .header("Name", "Value")
             .row("A", "1")
             .row("B", "2")
@@ -68,7 +68,7 @@ class TableElementTest {
     @Test
     @DisplayName("widths() sets column widths")
     void widthsMethod() {
-        var element = table()
+        TableElement element = table()
             .widths(Constraint.length(10), Constraint.fill());
         assertThat(element).isNotNull();
     }
@@ -76,10 +76,10 @@ class TableElementTest {
     @Test
     @DisplayName("TableElement renders to buffer")
     void rendersToBuffer() {
-        var area = new Rect(0, 0, 40, 10);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
-        var state = new TableState();
+        Rect area = new Rect(0, 0, 40, 10);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
+        TableState state = new TableState();
 
         table()
             .header("Name", "Age")
@@ -98,10 +98,10 @@ class TableElementTest {
     @Test
     @DisplayName("TableElement with selection")
     void withSelection() {
-        var area = new Rect(0, 0, 30, 8);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
-        var state = new TableState();
+        Rect area = new Rect(0, 0, 30, 8);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
+        TableState state = new TableState();
         state.select(1);
 
         table()
@@ -119,10 +119,10 @@ class TableElementTest {
     @Test
     @DisplayName("Empty area does not render")
     void emptyAreaNoRender() {
-        var emptyArea = new Rect(0, 0, 0, 0);
-        var buffer = Buffer.empty(new Rect(0, 0, 20, 10));
-        var frame = Frame.forTesting(buffer);
-        var state = new TableState();
+        Rect emptyArea = new Rect(0, 0, 0, 0);
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 20, 10));
+        Frame frame = Frame.forTesting(buffer);
+        TableState state = new TableState();
 
         // Should not throw
         table()
@@ -135,9 +135,9 @@ class TableElementTest {
     @Test
     @DisplayName("TableElement without explicit state creates internal state")
     void internalState() {
-        var area = new Rect(0, 0, 30, 5);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 30, 5);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         // Should not throw even without state
         table()
@@ -149,7 +149,7 @@ class TableElementTest {
     @Test
     @DisplayName("highlightSymbol sets selection indicator")
     void highlightSymbol() {
-        var element = table()
+        TableElement element = table()
             .highlightSymbol("→ ");
         assertThat(element).isNotNull();
     }
@@ -157,7 +157,7 @@ class TableElementTest {
     @Test
     @DisplayName("columnSpacing sets gap between columns")
     void columnSpacing() {
-        var element = table()
+        TableElement element = table()
             .columnSpacing(2);
         assertThat(element).isNotNull();
     }
@@ -165,7 +165,7 @@ class TableElementTest {
     @Test
     @DisplayName("footer() sets table footer")
     void footerMethod() {
-        var element = table()
+        TableElement element = table()
             .header("H1", "H2")
             .footer("Total", "100");
         assertThat(element).isNotNull();

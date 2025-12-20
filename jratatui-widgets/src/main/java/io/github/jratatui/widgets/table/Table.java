@@ -28,7 +28,7 @@ import java.util.Optional;
  * row selection with highlighting, and scrolling for large datasets.
  *
  * <pre>{@code
- * var table = Table.builder()
+ * Table table = Table.builder()
  *     .header(Row.from("Name", "Age", "City").style(Style.EMPTY.bold()))
  *     .rows(List.of(
  *         Row.from("Alice", "30", "New York"),

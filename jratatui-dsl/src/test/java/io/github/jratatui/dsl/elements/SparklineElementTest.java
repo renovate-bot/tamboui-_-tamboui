@@ -12,6 +12,7 @@ import io.github.jratatui.terminal.Frame;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static io.github.jratatui.dsl.Dsl.*;
@@ -25,7 +26,7 @@ class SparklineElementTest {
     @Test
     @DisplayName("SparklineElement fluent API chains correctly")
     void fluentApiChaining() {
-        var element = sparkline(1, 2, 3, 4, 5)
+        SparklineElement element = sparkline(1, 2, 3, 4, 5)
             .color(Color.CYAN)
             .title("CPU Usage")
             .rounded()
@@ -37,44 +38,44 @@ class SparklineElementTest {
     @Test
     @DisplayName("sparkline() creates empty element")
     void emptySparkline() {
-        var element = sparkline();
+        SparklineElement element = sparkline();
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("sparkline(long...) accepts long array")
     void sparklineWithLongArray() {
-        var element = sparkline(10L, 20L, 30L, 40L);
+        SparklineElement element = sparkline(10L, 20L, 30L, 40L);
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("sparkline(int...) accepts int array")
     void sparklineWithIntArray() {
-        var element = sparkline(10, 20, 30, 40);
+        SparklineElement element = sparkline(10, 20, 30, 40);
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("sparkline(Collection) accepts collection")
     void sparklineWithCollection() {
-        var element = sparkline(List.of(1, 2, 3, 4, 5));
+        SparklineElement element = sparkline(Arrays.asList(1, 2, 3, 4, 5));
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("data(long...) replaces data")
     void dataMethod() {
-        var element = sparkline().data(5L, 10L, 15L);
+        SparklineElement element = sparkline().data(5L, 10L, 15L);
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("SparklineElement renders to buffer")
     void rendersToBuffer() {
-        var area = new Rect(0, 0, 20, 3);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 20, 3);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         sparkline(1, 2, 3, 4, 5, 6, 7, 8)
             .title("Chart")
@@ -88,9 +89,9 @@ class SparklineElementTest {
     @Test
     @DisplayName("Empty area does not render")
     void emptyAreaNoRender() {
-        var emptyArea = new Rect(0, 0, 0, 0);
-        var buffer = Buffer.empty(new Rect(0, 0, 10, 3));
-        var frame = Frame.forTesting(buffer);
+        Rect emptyArea = new Rect(0, 0, 0, 0);
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 3));
+        Frame frame = Frame.forTesting(buffer);
 
         // Should not throw
         sparkline(1, 2, 3).render(frame, emptyArea, RenderContext.empty());
@@ -99,9 +100,9 @@ class SparklineElementTest {
     @Test
     @DisplayName("SparklineElement with color")
     void withColor() {
-        var area = new Rect(0, 0, 10, 3);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 10, 3);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         sparkline(8, 8, 8, 8, 8, 8, 8, 8)
             .color(Color.MAGENTA)
@@ -115,7 +116,7 @@ class SparklineElementTest {
     @Test
     @DisplayName("SparklineElement with max value")
     void withMaxValue() {
-        var element = sparkline(1, 2, 3).max(100L);
+        SparklineElement element = sparkline(1, 2, 3).max(100L);
         assertThat(element).isNotNull();
     }
 }

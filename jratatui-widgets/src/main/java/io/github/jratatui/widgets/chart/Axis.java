@@ -20,7 +20,7 @@ import java.util.Optional;
  * Defines the title, bounds, labels, and styling for an axis.
  *
  * <pre>{@code
- * var xAxis = Axis.builder()
+ * Axis xAxis = Axis.builder()
  *     .title("Time (s)")
  *     .bounds(0, 100)
  *     .labels("0", "25", "50", "75", "100")

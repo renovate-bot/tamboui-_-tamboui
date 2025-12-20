@@ -18,11 +18,11 @@ import java.util.Map;
  * calendar rendering.
  *
  * <pre>{@code
- * var events = CalendarEventStore.today(Style.EMPTY.fg(Color.RED).bold())
+ * CalendarEventStore events = CalendarEventStore.today(Style.EMPTY.fg(Color.RED).bold())
  *     .add(LocalDate.of(2025, 12, 25), Style.EMPTY.fg(Color.GREEN))
  *     .add(LocalDate.of(2025, 1, 1), Style.EMPTY.fg(Color.YELLOW));
  *
- * var calendar = Monthly.of(LocalDate.now(), events);
+ * Monthly calendar = Monthly.of(LocalDate.now(), events);
  * }</pre>
  *
  * @see DateStyler

@@ -23,13 +23,13 @@ import java.util.OptionalLong;
  *
  * <pre>{@code
  * // Simple sparkline with data
- * var sparkline = Sparkline.builder()
+ * Sparkline sparkline = Sparkline.builder()
  *     .data(1, 2, 3, 4, 5, 4, 3, 2, 1)
  *     .style(Style.EMPTY.fg(Color.CYAN))
  *     .build();
  *
  * // With block wrapper and custom max
- * var sparkline = Sparkline.builder()
+ * Sparkline sparkline2 = Sparkline.builder()
  *     .data(dataArray)
  *     .max(100)
  *     .block(Block.bordered().title(Title.from("CPU Usage")))

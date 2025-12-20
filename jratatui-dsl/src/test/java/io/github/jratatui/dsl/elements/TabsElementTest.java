@@ -13,6 +13,7 @@ import io.github.jratatui.widgets.tabs.TabsState;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static io.github.jratatui.dsl.Dsl.*;
@@ -26,7 +27,7 @@ class TabsElementTest {
     @Test
     @DisplayName("TabsElement fluent API chains correctly")
     void fluentApiChaining() {
-        var element = tabs("Home", "Settings", "About")
+        TabsElement element = tabs("Home", "Settings", "About")
             .selected(0)
             .highlightColor(Color.CYAN)
             .divider(" | ")
@@ -40,53 +41,53 @@ class TabsElementTest {
     @Test
     @DisplayName("tabs() creates empty element")
     void emptyTabs() {
-        var element = tabs();
+        TabsElement element = tabs();
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("tabs(String...) creates element with titles")
     void tabsWithTitles() {
-        var element = tabs("Tab1", "Tab2", "Tab3");
+        TabsElement element = tabs("Tab1", "Tab2", "Tab3");
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("tabs(List<String>) creates element with titles")
     void tabsWithTitlesList() {
-        var element = tabs(List.of("A", "B", "C"));
+        TabsElement element = tabs(Arrays.asList("A", "B", "C"));
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("selected() sets initial selection")
     void selectedMethod() {
-        var element = tabs("A", "B", "C").selected(1);
+        TabsElement element = tabs("A", "B", "C").selected(1);
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("state() sets tabs state")
     void stateMethod() {
-        var state = new TabsState();
+        TabsState state = new TabsState();
         state.select(2);
-        var element = tabs("A", "B", "C").state(state);
+        TabsElement element = tabs("A", "B", "C").state(state);
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("divider() sets separator")
     void dividerMethod() {
-        var element = tabs("A", "B").divider(" | ");
+        TabsElement element = tabs("A", "B").divider(" | ");
         assertThat(element).isNotNull();
     }
 
     @Test
     @DisplayName("TabsElement renders to buffer")
     void rendersToBuffer() {
-        var area = new Rect(0, 0, 40, 3);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 40, 3);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         tabs("Home", "Settings", "About")
             .selected(0)
@@ -101,9 +102,9 @@ class TabsElementTest {
     @Test
     @DisplayName("TabsElement with highlight color")
     void withHighlightColor() {
-        var area = new Rect(0, 0, 30, 1);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 30, 1);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         tabs("A", "B", "C")
             .selected(0)
@@ -117,9 +118,9 @@ class TabsElementTest {
     @Test
     @DisplayName("Empty area does not render")
     void emptyAreaNoRender() {
-        var emptyArea = new Rect(0, 0, 0, 0);
-        var buffer = Buffer.empty(new Rect(0, 0, 20, 3));
-        var frame = Frame.forTesting(buffer);
+        Rect emptyArea = new Rect(0, 0, 0, 0);
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 20, 3));
+        Frame frame = Frame.forTesting(buffer);
 
         // Should not throw
         tabs("A", "B").render(frame, emptyArea, RenderContext.empty());
@@ -128,9 +129,9 @@ class TabsElementTest {
     @Test
     @DisplayName("tabs without explicit selection defaults to 0")
     void defaultSelection() {
-        var area = new Rect(0, 0, 20, 1);
-        var buffer = Buffer.empty(area);
-        var frame = Frame.forTesting(buffer);
+        Rect area = new Rect(0, 0, 20, 1);
+        Buffer buffer = Buffer.empty(area);
+        Frame frame = Frame.forTesting(buffer);
 
         tabs("X", "Y", "Z")
             .render(frame, area, RenderContext.empty());

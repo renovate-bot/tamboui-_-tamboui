@@ -19,10 +19,10 @@ import java.util.Optional;
  *
  * <pre>{@code
  * // Simple group from values
- * var group = BarGroup.of(10, 20, 30);
+ * BarGroup group = BarGroup.of(10, 20, 30);
  *
  * // Group with label
- * var group = BarGroup.builder()
+ * BarGroup group2 = BarGroup.builder()
  *     .label("Q1")
  *     .bars(
  *         Bar.of(100, "Jan"),

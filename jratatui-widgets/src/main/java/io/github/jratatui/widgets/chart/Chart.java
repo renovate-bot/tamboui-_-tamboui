@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * axes, legends, and styling.
  *
  * <pre>{@code
- * var chart = Chart.builder()
+ * Chart chart = Chart.builder()
  *     .datasets(
  *         Dataset.builder()
  *             .name("Series 1")
