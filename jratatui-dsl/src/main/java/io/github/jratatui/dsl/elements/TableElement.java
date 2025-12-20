@@ -209,7 +209,7 @@ public final class TableElement extends StyledElement<TableElement> {
             return;
         }
 
-        var builder = Table.builder()
+        Table.Builder builder = Table.builder()
             .rows(rows)
             .widths(widths)
             .style(style)
@@ -226,7 +226,7 @@ public final class TableElement extends StyledElement<TableElement> {
         }
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }
@@ -239,8 +239,8 @@ public final class TableElement extends StyledElement<TableElement> {
             builder.block(blockBuilder.build());
         }
 
-        var widget = builder.build();
-        var effectiveState = state != null ? state : new TableState();
+        Table widget = builder.build();
+        TableState effectiveState = state != null ? state : new TableState();
         frame.renderStatefulWidget(widget, area, effectiveState);
     }
 }

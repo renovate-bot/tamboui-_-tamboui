@@ -167,7 +167,7 @@ public final class CanvasElement extends StyledElement<CanvasElement> {
             return;
         }
 
-        var builder = Canvas.builder()
+        Canvas.Builder builder = Canvas.builder()
             .xBounds(xMin, xMax)
             .yBounds(yMin, yMax)
             .marker(marker);
@@ -181,7 +181,7 @@ public final class CanvasElement extends StyledElement<CanvasElement> {
         }
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }

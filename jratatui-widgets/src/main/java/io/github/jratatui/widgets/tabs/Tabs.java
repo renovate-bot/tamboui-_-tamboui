@@ -11,6 +11,7 @@ import io.github.jratatui.text.Line;
 import io.github.jratatui.text.Span;
 import io.github.jratatui.widgets.StatefulWidget;
 import io.github.jratatui.widgets.block.Block;
+import static io.github.jratatui.util.CollectionUtil.listCopyOf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,7 +47,7 @@ public final class Tabs implements StatefulWidget<TabsState> {
     private final String paddingRight;
 
     private Tabs(Builder builder) {
-        this.titles = List.copyOf(builder.titles);
+        this.titles = listCopyOf(builder.titles);
         this.block = Optional.ofNullable(builder.block);
         this.style = builder.style;
         this.highlightStyle = builder.highlightStyle;

@@ -168,14 +168,14 @@ public final class ListElement extends StyledElement<ListElement> {
             return;
         }
 
-        var builder = ListWidget.builder()
+        ListWidget.Builder builder = ListWidget.builder()
             .items(items)
             .style(style)
             .highlightStyle(highlightStyle)
             .highlightSymbol(highlightSymbol);
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }
@@ -188,8 +188,8 @@ public final class ListElement extends StyledElement<ListElement> {
             builder.block(blockBuilder.build());
         }
 
-        var widget = builder.build();
-        var effectiveState = state != null ? state : new ListState();
+        ListWidget widget = builder.build();
+        ListState effectiveState = state != null ? state : new ListState();
         frame.renderStatefulWidget(widget, area, effectiveState);
     }
 }

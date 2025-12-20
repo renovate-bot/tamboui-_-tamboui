@@ -5,6 +5,7 @@
 package io.github.jratatui.widgets.barchart;
 
 import io.github.jratatui.text.Line;
+import static io.github.jratatui.util.CollectionUtil.listCopyOf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +38,7 @@ public final class BarGroup {
     private final Line label;
 
     private BarGroup(Builder builder) {
-        this.bars = List.copyOf(builder.bars);
+        this.bars = listCopyOf(builder.bars);
         this.label = builder.label;
     }
 
@@ -45,7 +46,7 @@ public final class BarGroup {
      * Creates a group from bar values.
      */
     public static BarGroup of(long... values) {
-        var builder = builder();
+        Builder builder = builder();
         for (long value : values) {
             builder.addBar(Bar.of(value));
         }

@@ -188,7 +188,7 @@ public final class CalendarElement extends StyledElement<CalendarElement> {
             return;
         }
 
-        var builder = Monthly.builder(displayDate, dateStyler)
+        Monthly.Builder builder = Monthly.builder(displayDate, dateStyler)
             .firstDayOfWeek(firstDayOfWeek);
 
         if (monthHeaderStyle != null) {
@@ -208,7 +208,7 @@ public final class CalendarElement extends StyledElement<CalendarElement> {
         }
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }

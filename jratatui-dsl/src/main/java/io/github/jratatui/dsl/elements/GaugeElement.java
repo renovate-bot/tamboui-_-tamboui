@@ -127,7 +127,7 @@ public final class GaugeElement extends StyledElement<GaugeElement> {
             return;
         }
 
-        var builder = Gauge.builder()
+        Gauge.Builder builder = Gauge.builder()
             .ratio(ratio)
             .gaugeStyle(gaugeStyle)
             .style(style)
@@ -138,7 +138,7 @@ public final class GaugeElement extends StyledElement<GaugeElement> {
         }
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }

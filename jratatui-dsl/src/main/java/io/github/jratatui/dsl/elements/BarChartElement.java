@@ -241,7 +241,7 @@ public final class BarChartElement extends StyledElement<BarChartElement> {
             return;
         }
 
-        var builder = BarChart.builder()
+        BarChart.Builder builder = BarChart.builder()
             .data(groups)
             .barWidth(barWidth)
             .barGap(barGap)
@@ -267,7 +267,7 @@ public final class BarChartElement extends StyledElement<BarChartElement> {
         }
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }

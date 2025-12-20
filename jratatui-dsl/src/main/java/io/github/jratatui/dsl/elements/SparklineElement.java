@@ -178,7 +178,7 @@ public final class SparklineElement extends StyledElement<SparklineElement> {
             return;
         }
 
-        var builder = Sparkline.builder()
+        Sparkline.Builder builder = Sparkline.builder()
             .data(data)
             .style(style)
             .barSet(barSet)
@@ -189,7 +189,7 @@ public final class SparklineElement extends StyledElement<SparklineElement> {
         }
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }

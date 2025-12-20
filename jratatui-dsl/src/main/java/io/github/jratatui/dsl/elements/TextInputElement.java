@@ -135,14 +135,14 @@ public final class TextInputElement extends StyledElement<TextInputElement> {
             return;
         }
 
-        var builder = TextInput.builder()
+        TextInput.Builder builder = TextInput.builder()
             .style(style)
             .cursorStyle(cursorStyle)
             .placeholder(placeholder)
             .placeholderStyle(placeholderStyle);
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }
@@ -155,7 +155,7 @@ public final class TextInputElement extends StyledElement<TextInputElement> {
             builder.block(blockBuilder.build());
         }
 
-        var widget = builder.build();
+        TextInput widget = builder.build();
 
         if (showCursor) {
             widget.renderWithCursor(area, frame.buffer(), state, frame);

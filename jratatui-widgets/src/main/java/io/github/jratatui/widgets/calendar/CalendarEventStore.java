@@ -5,6 +5,7 @@
 package io.github.jratatui.widgets.calendar;
 
 import io.github.jratatui.style.Style;
+import static io.github.jratatui.util.CollectionUtil.mapCopyOf;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ public final class CalendarEventStore implements DateStyler {
      * Creates an empty event store.
      */
     public static CalendarEventStore empty() {
-        return new CalendarEventStore(Map.of());
+        return new CalendarEventStore(mapCopyOf());
     }
 
     /**

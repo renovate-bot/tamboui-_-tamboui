@@ -55,7 +55,8 @@ public final class EventRouter {
         elements.add(element);
         elementAreas.put(element, area);
         // Also set on StyledElement for backwards compatibility
-        if (element instanceof StyledElement<?> styled) {
+        if (element instanceof StyledElement) {
+            StyledElement<?> styled = (StyledElement<?>) element;
             styled.setRenderedArea(area);
         }
     }
@@ -83,11 +84,13 @@ public final class EventRouter {
      * @return HANDLED if any element handled the event, UNHANDLED otherwise
      */
     public EventResult route(Event event) {
-        return switch (event) {
-            case KeyEvent k -> routeKeyEvent(k);
-            case MouseEvent m -> routeMouseEvent(m);
-            default -> EventResult.UNHANDLED;
-        };
+        if (event instanceof KeyEvent) {
+            return routeKeyEvent((KeyEvent) event);
+        }
+        if (event instanceof MouseEvent) {
+            return routeMouseEvent((MouseEvent) event);
+        }
+        return EventResult.UNHANDLED;
     }
 
     private EventResult routeKeyEvent(KeyEvent event) {
@@ -184,7 +187,8 @@ public final class EventRouter {
                     }
 
                     // Check if draggable
-                    if (element.isDraggable() && element instanceof StyledElement<?> styled) {
+                    if (element.isDraggable() && element instanceof StyledElement) {
+                        StyledElement<?> styled = (StyledElement<?>) element;
                         DragHandler handler = styled.dragHandler();
                         if (handler != null) {
                             startDrag(element, handler, event.x(), event.y());

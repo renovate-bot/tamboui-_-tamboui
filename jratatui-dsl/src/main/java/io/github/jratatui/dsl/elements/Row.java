@@ -78,7 +78,7 @@ public final class Row extends StyledElement<Row> {
         }
 
         List<Rect> areas = Layout.horizontal()
-            .constraints(constraints.toArray(Constraint[]::new))
+            .constraints(constraints.toArray(new Constraint[0]))
             .split(area);
 
         // Render children (skipping spacing areas) and register them for events

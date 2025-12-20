@@ -11,6 +11,7 @@ import io.github.jratatui.style.Style;
 import io.github.jratatui.text.Line;
 import io.github.jratatui.widgets.Widget;
 import io.github.jratatui.widgets.block.Block;
+import static io.github.jratatui.util.CollectionUtil.listCopyOf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,17 +50,39 @@ public final class BarChart implements Widget {
     /**
      * Symbol set for rendering bar fills.
      */
-    public record BarSet(
-        String empty,
-        String oneEighth,
-        String oneQuarter,
-        String threeEighths,
-        String half,
-        String fiveEighths,
-        String threeQuarters,
-        String sevenEighths,
-        String full
-    ) {
+    public static final class BarSet {
+        private final String empty;
+        private final String oneEighth;
+        private final String oneQuarter;
+        private final String threeEighths;
+        private final String half;
+        private final String fiveEighths;
+        private final String threeQuarters;
+        private final String sevenEighths;
+        private final String full;
+
+        public BarSet(
+            String empty,
+            String oneEighth,
+            String oneQuarter,
+            String threeEighths,
+            String half,
+            String fiveEighths,
+            String threeQuarters,
+            String sevenEighths,
+            String full
+        ) {
+            this.empty = empty;
+            this.oneEighth = oneEighth;
+            this.oneQuarter = oneQuarter;
+            this.threeEighths = threeEighths;
+            this.half = half;
+            this.fiveEighths = fiveEighths;
+            this.threeQuarters = threeQuarters;
+            this.sevenEighths = sevenEighths;
+            this.full = full;
+        }
+
         /**
          * Nine-level vertical bar set.
          */
@@ -90,6 +113,83 @@ public final class BarChart implements Widget {
                 half, fiveEighths, threeQuarters, sevenEighths, full
             };
         }
+
+        public String empty() {
+            return empty;
+        }
+
+        public String oneEighth() {
+            return oneEighth;
+        }
+
+        public String oneQuarter() {
+            return oneQuarter;
+        }
+
+        public String threeEighths() {
+            return threeEighths;
+        }
+
+        public String half() {
+            return half;
+        }
+
+        public String fiveEighths() {
+            return fiveEighths;
+        }
+
+        public String threeQuarters() {
+            return threeQuarters;
+        }
+
+        public String sevenEighths() {
+            return sevenEighths;
+        }
+
+        public String full() {
+            return full;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof BarSet)) {
+                return false;
+            }
+            BarSet barSet = (BarSet) o;
+            return empty.equals(barSet.empty)
+                && oneEighth.equals(barSet.oneEighth)
+                && oneQuarter.equals(barSet.oneQuarter)
+                && threeEighths.equals(barSet.threeEighths)
+                && half.equals(barSet.half)
+                && fiveEighths.equals(barSet.fiveEighths)
+                && threeQuarters.equals(barSet.threeQuarters)
+                && sevenEighths.equals(barSet.sevenEighths)
+                && full.equals(barSet.full);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = empty.hashCode();
+            result = 31 * result + oneEighth.hashCode();
+            result = 31 * result + oneQuarter.hashCode();
+            result = 31 * result + threeEighths.hashCode();
+            result = 31 * result + half.hashCode();
+            result = 31 * result + fiveEighths.hashCode();
+            result = 31 * result + threeQuarters.hashCode();
+            result = 31 * result + sevenEighths.hashCode();
+            result = 31 * result + full.hashCode();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "BarSet[empty=%s, oneEighth=%s, oneQuarter=%s, threeEighths=%s, half=%s, fiveEighths=%s, threeQuarters=%s, sevenEighths=%s, full=%s]",
+                empty, oneEighth, oneQuarter, threeEighths, half, fiveEighths, threeQuarters, sevenEighths, full);
+        }
     }
 
     private final List<BarGroup> data;
@@ -106,7 +206,7 @@ public final class BarChart implements Widget {
     private final BarSet barSet;
 
     private BarChart(Builder builder) {
-        this.data = List.copyOf(builder.data);
+        this.data = listCopyOf(builder.data);
         this.max = builder.max;
         this.barWidth = builder.barWidth;
         this.barGap = builder.barGap;
@@ -377,7 +477,7 @@ public final class BarChart implements Widget {
          */
         public Builder data(BarGroup... groups) {
             if (groups != null) {
-                this.data.addAll(List.of(groups));
+                this.data.addAll(listCopyOf(groups));
             }
             return this;
         }

@@ -149,7 +149,7 @@ public final class ChartElement extends StyledElement<ChartElement> {
             return;
         }
 
-        var builder = Chart.builder()
+        Chart.Builder builder = Chart.builder()
             .datasets(datasets)
             .xAxis(xAxis)
             .yAxis(yAxis)
@@ -162,7 +162,7 @@ public final class ChartElement extends StyledElement<ChartElement> {
         }
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }

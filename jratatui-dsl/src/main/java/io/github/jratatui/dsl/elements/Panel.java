@@ -207,7 +207,7 @@ public final class Panel extends StyledElement<Panel> {
         }
 
         List<Rect> areas = Layout.vertical()
-            .constraints(constraints.toArray(Constraint[]::new))
+            .constraints(constraints.toArray(new Constraint[0]))
             .split(innerArea);
 
         // Render children and register them for events

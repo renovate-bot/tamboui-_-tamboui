@@ -160,15 +160,15 @@ public final class TabsElement extends StyledElement<TabsElement> {
             return;
         }
 
-        var builder = Tabs.builder()
-            .titles(titles.toArray(String[]::new))
+        Tabs.Builder builder = Tabs.builder()
+            .titles(titles.toArray(new String[0]))
             .style(style)
             .highlightStyle(highlightStyle)
             .divider(divider)
             .padding(paddingLeft, paddingRight);
 
         if (title != null || borderType != null) {
-            var blockBuilder = Block.builder().borders(Borders.ALL);
+            Block.Builder blockBuilder = Block.builder().borders(Borders.ALL);
             if (title != null) {
                 blockBuilder.title(Title.from(title));
             }
@@ -181,8 +181,8 @@ public final class TabsElement extends StyledElement<TabsElement> {
             builder.block(blockBuilder.build());
         }
 
-        var widget = builder.build();
-        var effectiveState = state != null ? state : new TabsState(0);
+        Tabs widget = builder.build();
+        TabsState effectiveState = state != null ? state : new TabsState(0);
         frame.renderStatefulWidget(widget, area, effectiveState);
     }
 }

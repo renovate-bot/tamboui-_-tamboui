@@ -8,22 +8,31 @@ import java.time.Duration;
 
 /**
  * Configuration options for {@link TuiRunner}.
- *
- * @param rawMode          whether to enable raw mode (default: true)
- * @param alternateScreen  whether to use alternate screen buffer (default: true)
- * @param hideCursor       whether to hide the cursor (default: true)
- * @param mouseCapture     whether to capture mouse events (default: false)
- * @param pollTimeout      timeout for polling events (default: 100ms)
- * @param tickRate         interval between tick events, or null to disable (default: null)
  */
-public record TuiConfig(
-    boolean rawMode,
-    boolean alternateScreen,
-    boolean hideCursor,
-    boolean mouseCapture,
-    Duration pollTimeout,
-    Duration tickRate
-) {
+public final class TuiConfig {
+
+    private final boolean rawMode;
+    private final boolean alternateScreen;
+    private final boolean hideCursor;
+    private final boolean mouseCapture;
+    private final Duration pollTimeout;
+    private final Duration tickRate;
+
+    public TuiConfig(
+        boolean rawMode,
+        boolean alternateScreen,
+        boolean hideCursor,
+        boolean mouseCapture,
+        Duration pollTimeout,
+        Duration tickRate
+    ) {
+        this.rawMode = rawMode;
+        this.alternateScreen = alternateScreen;
+        this.hideCursor = hideCursor;
+        this.mouseCapture = mouseCapture;
+        this.pollTimeout = pollTimeout;
+        this.tickRate = tickRate;
+    }
 
     /**
      * Returns the default configuration.
@@ -60,6 +69,71 @@ public record TuiConfig(
      */
     public boolean ticksEnabled() {
         return tickRate != null;
+    }
+
+    public boolean rawMode() {
+        return rawMode;
+    }
+
+    public boolean alternateScreen() {
+        return alternateScreen;
+    }
+
+    public boolean hideCursor() {
+        return hideCursor;
+    }
+
+    public boolean mouseCapture() {
+        return mouseCapture;
+    }
+
+    public Duration pollTimeout() {
+        return pollTimeout;
+    }
+
+    public Duration tickRate() {
+        return tickRate;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TuiConfig)) {
+            return false;
+        }
+        TuiConfig that = (TuiConfig) o;
+        return rawMode == that.rawMode
+            && alternateScreen == that.alternateScreen
+            && hideCursor == that.hideCursor
+            && mouseCapture == that.mouseCapture
+            && pollTimeout.equals(that.pollTimeout)
+            && (tickRate != null ? tickRate.equals(that.tickRate) : that.tickRate == null);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Boolean.hashCode(rawMode);
+        result = 31 * result + Boolean.hashCode(alternateScreen);
+        result = 31 * result + Boolean.hashCode(hideCursor);
+        result = 31 * result + Boolean.hashCode(mouseCapture);
+        result = 31 * result + pollTimeout.hashCode();
+        result = 31 * result + (tickRate != null ? tickRate.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+            "TuiConfig[rawMode=%s, alternateScreen=%s, hideCursor=%s, mouseCapture=%s, pollTimeout=%s, tickRate=%s]",
+            rawMode,
+            alternateScreen,
+            hideCursor,
+            mouseCapture,
+            pollTimeout,
+            tickRate
+        );
     }
 
     /**

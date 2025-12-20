@@ -127,7 +127,7 @@ public final class LineGaugeElement extends StyledElement<LineGaugeElement> {
             return;
         }
 
-        var builder = LineGauge.builder()
+        LineGauge.Builder builder = LineGauge.builder()
             .ratio(ratio)
             .style(style)
             .filledStyle(filledStyle)

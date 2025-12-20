@@ -5,6 +5,7 @@
 package io.github.jratatui.dsl.focus;
 
 import io.github.jratatui.layout.Rect;
+import static io.github.jratatui.util.CollectionUtil.listCopyOf;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -92,13 +93,13 @@ public final class FocusManager {
         }
 
         if (focusedId == null) {
-            focusedId = focusOrder.getFirst();
+            focusedId = focusOrder.get(0);
             return true;
         }
 
         int index = focusOrder.indexOf(focusedId);
         if (index < 0) {
-            focusedId = focusOrder.getFirst();
+            focusedId = focusOrder.get(0);
             return true;
         }
 
@@ -122,13 +123,13 @@ public final class FocusManager {
         }
 
         if (focusedId == null) {
-            focusedId = focusOrder.getLast();
+            focusedId = focusOrder.get(focusOrder.size() - 1);
             return true;
         }
 
         int index = focusOrder.indexOf(focusedId);
         if (index < 0) {
-            focusedId = focusOrder.getLast();
+            focusedId = focusOrder.get(focusOrder.size() - 1);
             return true;
         }
 
@@ -173,6 +174,6 @@ public final class FocusManager {
      * @return the focus order
      */
     public List<String> focusOrder() {
-        return List.copyOf(focusOrder);
+        return listCopyOf(focusOrder);
     }
 }

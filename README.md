@@ -11,11 +11,11 @@ JRatatui brings the immediate-mode TUI paradigm from Rust to the Java ecosystem.
 - **Immediate-mode rendering** - Redraw the entire UI each frame for simple state management
 - **Intermediate buffer system** - Widgets render to a buffer, enabling diff-based terminal updates
 - **Constraint-based layout** - Flexible layout system with percentage, fixed, ratio, and proportional sizing
-- **Modern Java idioms** - Records, sealed interfaces, pattern matching (Java 21+)
 - **JLine 3 backend** - Cross-platform terminal support including Windows via Jansi
 - **High-level TUI framework** - TuiRunner eliminates boilerplate with built-in event handling
 - **PicoCLI integration** - Optional module for CLI argument parsing
 - **GraalVM native image support** - Compile to native executables for instant startup
+- **Works everywhere** - Core is Java 8+ compatible, but following patterns that works really well with modern Java idioms
 
 ## Modules
 
@@ -31,7 +31,7 @@ JRatatui brings the immediate-mode TUI paradigm from Rust to the Java ecosystem.
 
 ## Requirements
 
-- Java 21 or later
+- Java 8 or later, Java 17+ highly recommended
 - Gradle 9.x
 
 ## Quick Start
@@ -40,6 +40,7 @@ JRatatui brings the immediate-mode TUI paradigm from Rust to the Java ecosystem.
 
 The `jratatui-tui` module provides a high-level framework that eliminates boilerplate:
 
+[examples/HelloWorld.java](examples/HelloWorld.java):
 ```java
 import io.github.jratatui.tui.TuiRunner;
 import io.github.jratatui.tui.Keys;
@@ -70,6 +71,7 @@ public class HelloWorld {
 ```
 
 ### With Mouse and Animation
+
 
 ```java
 import io.github.jratatui.tui.TuiConfig;

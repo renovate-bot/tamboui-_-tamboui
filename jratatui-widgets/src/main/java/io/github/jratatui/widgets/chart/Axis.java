@@ -8,6 +8,7 @@ import io.github.jratatui.layout.Alignment;
 import io.github.jratatui.style.Style;
 import io.github.jratatui.text.Line;
 import io.github.jratatui.text.Span;
+import static io.github.jratatui.util.CollectionUtil.listCopyOf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public final class Axis {
     private Axis(Builder builder) {
         this.title = builder.title;
         this.bounds = builder.bounds;
-        this.labels = List.copyOf(builder.labels);
+        this.labels = listCopyOf(builder.labels);
         this.style = builder.style;
         this.labelsAlignment = builder.labelsAlignment;
     }
@@ -193,7 +194,7 @@ public final class Axis {
         public Builder labels(Span... labels) {
             this.labels.clear();
             if (labels != null) {
-                this.labels.addAll(List.of(labels));
+                this.labels.addAll(listCopyOf(labels));
             }
             return this;
         }

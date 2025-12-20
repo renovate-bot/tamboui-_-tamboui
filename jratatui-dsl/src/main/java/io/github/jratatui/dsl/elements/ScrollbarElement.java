@@ -214,7 +214,7 @@ public final class ScrollbarElement extends StyledElement<ScrollbarElement> {
             return;
         }
 
-        var builder = Scrollbar.builder()
+        Scrollbar.Builder builder = Scrollbar.builder()
             .orientation(orientation)
             .style(style);
 
@@ -254,8 +254,8 @@ public final class ScrollbarElement extends StyledElement<ScrollbarElement> {
             builder.endStyle(endStyle);
         }
 
-        var widget = builder.build();
-        var effectiveState = state != null ? state : new ScrollbarState().contentLength(100);
+        Scrollbar widget = builder.build();
+        ScrollbarState effectiveState = state != null ? state : new ScrollbarState().contentLength(100);
         frame.renderStatefulWidget(widget, area, effectiveState);
     }
 }
