@@ -6,10 +6,12 @@ plugins {
 
 repositories {
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
     implementation(libs.graalvm.native)
+    implementation(libs.nexus.publishing.plugin)
 }
 
 java {
