@@ -4,7 +4,7 @@ plugins {
 }
 
 allprojects {
-    group = "ink.glimt"
+    group = "dev.tamboui"
     version = "0.1.0-SNAPSHOT"
 
     repositories {

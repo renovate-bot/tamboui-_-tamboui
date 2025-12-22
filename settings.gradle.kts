@@ -1,12 +1,12 @@
-rootProject.name = "glimt-parent"
+rootProject.name = "tamboui-parent"
 
 include(
-    "glimt-core",
-    "glimt-widgets",
-    "glimt-jline",
-    "glimt-tui",
-    "glimt-picocli",
-    "glimt-toolkit"
+    "tamboui-core",
+    "tamboui-widgets",
+    "tamboui-jline",
+    "tamboui-tui",
+    "tamboui-picocli",
+    "tamboui-toolkit"
 )
 
 File(settingsDir, "demos").listFiles()?.forEach {

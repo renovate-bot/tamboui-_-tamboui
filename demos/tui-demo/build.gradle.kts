@@ -1,13 +1,13 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
 description = "Demo showcasing the TuiRunner framework"
 
 dependencies {
-    implementation(projects.glimtTui)
+    implementation(projects.tambouiTui)
 }
 
 application {
-    mainClass.set("ink.glimt.demo.TuiDemo")
+    mainClass.set("dev.tamboui.demo.TuiDemo")
 }

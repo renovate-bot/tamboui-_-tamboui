@@ -1,10 +1,10 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
-description = "Demo TUI application using Glimt"
+description = "Demo TUI application using TamboUI"
 
 application {
-    mainClass.set("ink.glimt.demo.Demo")
+    mainClass.set("dev.tamboui.demo.Demo")
 }
 

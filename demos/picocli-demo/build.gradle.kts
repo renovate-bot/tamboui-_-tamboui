@@ -1,16 +1,16 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
-description = "Demo showcasing PicoCLI integration with Glimt"
+description = "Demo showcasing PicoCLI integration with TamboUI"
 
 dependencies {
-    implementation(projects.glimtPicocli)
+    implementation(projects.tambouiPicocli)
     annotationProcessor(libs.picocli.codegen)
 }
 
 application {
-    mainClass.set("ink.glimt.demo.PicoCLIDemo")
+    mainClass.set("dev.tamboui.demo.PicoCLIDemo")
 }
 
 tasks.withType<JavaCompile> {

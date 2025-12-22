@@ -1,13 +1,14 @@
-# Glimt
+# TamboUI
 
 A Java library for building modern terminal user interfaces.
 
-Glimt brings the TUI paradigms seen in things like Rust's [ratatui](https://github.com/ratatui/ratatui) or Go's [bubbletea](https://github.com/charmbracelet/bubbletea/) to the Java ecosystem.
+TamboUI brings the TUI paradigms seen in things like Rust's [ratatui](https://github.com/ratatui/ratatui) or Go's [bubbletea](https://github.com/charmbracelet/bubbletea/) to the Java ecosystem.
+
+TamboUI is pronounced like "[tambouille](https://www.howtopronounce.com/french/tambouille)" (\tɑ̃.buj\) in French, or "tan-bouy".
 
 It provides a comprehensive set of widgets and a layout system for building rich terminal applications with modern Java idioms.
 
-> **Note:** Glimt is still experimental and under active development. APIs may/will change. Feedback, issues, and contributions are welcome!
-
+> **Note:** TamboUI is still experimental and under active development. APIs may/will change. Feedback, issues, and contributions are welcome!
 
 ### Key Features
 
@@ -24,12 +25,12 @@ It provides a comprehensive set of widgets and a layout system for building rich
 
 | Module | Description |
 |--------|-------------|
-| `glimt-core` | Core types: Buffer, Cell, Rect, Style, Layout, Text primitives |
-| `glimt-widgets` | All widget implementations (see below) |
-| `glimt-jline` | JLine 3 terminal backend |
-| `glimt-tui` | High-level TUI framework with TuiRunner, event handling, and key helpers |
-| `glimt-toolkit` | Fluent DSL for declarative UI construction with components and focus management |
-| `glimt-picocli` | Optional PicoCLI integration for CLI argument parsing |
+| `tamboui-core` | Core types: Buffer, Cell, Rect, Style, Layout, Text primitives |
+| `tamboui-widgets` | All widget implementations (see below) |
+| `tamboui-jline` | JLine 3 terminal backend |
+| `tamboui-tui` | High-level TUI framework with TuiRunner, event handling, and key helpers |
+| `tamboui-toolkit` | Fluent DSL for declarative UI construction with components and focus management |
+| `tamboui-picocli` | Optional PicoCLI integration for CLI argument parsing |
 | `demos/*` | Demo applications showcasing widgets and features |
 
 ## Requirements
@@ -41,14 +42,14 @@ It provides a comprehensive set of widgets and a layout system for building rich
 
 ### Using TuiRunner (Recommended)
 
-The `glimt-tui` module provides a high-level framework that eliminates boilerplate:
+The `tamboui-tui` module provides a high-level framework that eliminates boilerplate:
 
 [examples/HelloWorld.java](examples/HelloWorld.java):
 ```java
-import ink.glimt.tui.TuiRunner;
-import ink.glimt.tui.Keys;
-import ink.glimt.widgets.paragraph.Paragraph;
-import ink.glimt.text.Text;
+import dev.tamboui.tui.TuiRunner;
+import dev.tamboui.tui.Keys;
+import dev.tamboui.widgets.paragraph.Paragraph;
+import dev.tamboui.text.Text;
 
 public class HelloWorld {
     public static void main(String[] args) throws Exception {
@@ -63,7 +64,7 @@ public class HelloWorld {
                 },
                 frame -> {
                     var paragraph = Paragraph.builder()
-                        .text(Text.from("Hello, Glimt! Press 'q' to quit."))
+                        .text(Text.from("Hello, TamboUI! Press 'q' to quit."))
                         .build();
                     frame.renderWidget(paragraph, frame.area());
                 }
@@ -77,8 +78,8 @@ public class HelloWorld {
 
 
 ```java
-import ink.glimt.tui.TuiConfig;
-import ink.glimt.tui.TuiRunner;
+import dev.tamboui.tui.TuiConfig;
+import dev.tamboui.tui.TuiRunner;
 import java.time.Duration;
 
 var config = TuiConfig.builder()
@@ -102,7 +103,7 @@ try (var tui = TuiRunner.create(config)) {
 ### With PicoCLI Integration
 
 ```java
-import ink.glimt.picocli.TuiCommand;
+import dev.tamboui.picocli.TuiCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -126,19 +127,19 @@ public class MyApp extends TuiCommand {
 
 ### Using the DSL (Declarative)
 
-The `glimt-toolkit` module provides a fluent DSL for declarative UI construction:
+The `tamboui-toolkit` module provides a fluent DSL for declarative UI construction:
 
 ```java
-import static ink.glimt.toolkit.Toolkit.*;
-import ink.glimt.toolkit.app.ToolkitApp;
-import ink.glimt.toolkit.element.Element;
+import static dev.tamboui.toolkit.Toolkit.*;
+import dev.tamboui.toolkit.app.ToolkitApp;
+import dev.tamboui.toolkit.element.Element;
 
 public class HelloDsl extends ToolkitApp {
 
     @Override
     protected Element render() {
         return panel("Hello",
-            text("Welcome to Glimt DSL!").bold().cyan(),
+            text("Welcome to TamboUI DSL!").bold().cyan(),
             spacer(),
             text("Press 'q' to quit").dim()
         ).rounded();
@@ -233,9 +234,9 @@ canvas(-10, 10, -10, 10)
 For more control, use the terminal directly:
 
 ```java
-import ink.glimt.terminal.Backend;
-import ink.glimt.terminal.BackendFactory;
-import ink.glimt.terminal.Terminal;
+import dev.tamboui.terminal.Backend;
+import dev.tamboui.terminal.BackendFactory;
+import dev.tamboui.terminal.Terminal;
 
 try (var backend = BackendFactory.create()) {
     backend.enableRawMode();
@@ -323,7 +324,7 @@ All standard ratatui widgets are implemented:
 | **Calendar** | Stateless | Monthly calendar with date styling |
 | **Scrollbar** | Stateful | Visual scroll position indicator |
 | **Clear** | Stateless | Clears an area (for widget layering) |
-| **TextInput** | Stateful | Single-line text input (Glimt addition) |
+| **TextInput** | Stateful | Single-line text input (TamboUI addition) |
 
 ## Demo Applications
 
@@ -349,7 +350,7 @@ All standard ratatui widgets are implemented:
 The `Keys` class provides helpers for common key patterns:
 
 ```java
-import static ink.glimt.tui.Keys.*;
+import static dev.tamboui.tui.Keys.*;
 
 // Quit patterns
 isQuit(event)      // q, Q, or Ctrl+C

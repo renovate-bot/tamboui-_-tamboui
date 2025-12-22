@@ -1,9 +1,9 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
 description = "Demo showcasing the Table widget"
 
 application {
-    mainClass.set("ink.glimt.demo.TableDemo")
+    mainClass.set("dev.tamboui.demo.TableDemo")
 }

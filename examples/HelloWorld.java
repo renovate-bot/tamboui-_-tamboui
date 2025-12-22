@@ -1,10 +1,10 @@
-//DEPS ink.glimt:glimt-dsl:LATEST
+//DEPS dev.tamboui:tamboui-dsl:LATEST
 //JAVA 11+
 
-import ink.glimt.tui.TuiRunner;
-import ink.glimt.tui.Keys;
-import ink.glimt.widgets.paragraph.Paragraph;
-import ink.glimt.text.Text;
+import dev.tamboui.tui.TuiRunner;
+import dev.tamboui.tui.Keys;
+import dev.tamboui.widgets.paragraph.Paragraph;
+import dev.tamboui.text.Text;
 
 public class HelloWorld {
     public static void main(String[] args) throws Exception {
@@ -19,7 +19,7 @@ public class HelloWorld {
                 },
                 frame -> {
                     var paragraph = Paragraph.builder()
-                        .text(Text.from("Hello, Glimt! Press 'q' to quit."))
+                        .text(Text.from("Hello, TamboUI! Press 'q' to quit."))
                         .build();
                     frame.renderWidget(paragraph, frame.area());
                 }

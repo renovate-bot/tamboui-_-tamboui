@@ -1,26 +1,26 @@
-//DEPS ink.glimt:glimt-dsl:LATEST
+//DEPS dev.tamboui:tamboui-dsl:LATEST
 
-import ink.glimt.backend.jline.JLineBackend;
-import ink.glimt.layout.Constraint;
-import ink.glimt.layout.Layout;
-import ink.glimt.layout.Rect;
-import ink.glimt.style.Color;
-import ink.glimt.style.Style;
-import ink.glimt.terminal.Frame;
-import ink.glimt.terminal.Terminal;
-import ink.glimt.text.Line;
-import ink.glimt.text.Span;
-import ink.glimt.text.Text;
-import ink.glimt.widgets.block.Block;
-import ink.glimt.widgets.block.BorderType;
-import ink.glimt.widgets.block.Borders;
-import ink.glimt.widgets.block.Title;
-import ink.glimt.widgets.canvas.Canvas;
-import ink.glimt.widgets.canvas.Marker;
-import ink.glimt.widgets.canvas.shapes.Circle;
-import ink.glimt.widgets.canvas.shapes.Points;
-import ink.glimt.widgets.canvas.shapes.Rectangle;
-import ink.glimt.widgets.paragraph.Paragraph;
+import dev.tamboui.backend.jline.JLineBackend;
+import dev.tamboui.layout.Constraint;
+import dev.tamboui.layout.Layout;
+import dev.tamboui.layout.Rect;
+import dev.tamboui.style.Color;
+import dev.tamboui.style.Style;
+import dev.tamboui.terminal.Frame;
+import dev.tamboui.terminal.Terminal;
+import dev.tamboui.text.Line;
+import dev.tamboui.text.Span;
+import dev.tamboui.text.Text;
+import dev.tamboui.widgets.block.Block;
+import dev.tamboui.widgets.block.BorderType;
+import dev.tamboui.widgets.block.Borders;
+import dev.tamboui.widgets.block.Title;
+import dev.tamboui.widgets.canvas.Canvas;
+import dev.tamboui.widgets.canvas.Marker;
+import dev.tamboui.widgets.canvas.shapes.Circle;
+import dev.tamboui.widgets.canvas.shapes.Points;
+import dev.tamboui.widgets.canvas.shapes.Rectangle;
+import dev.tamboui.widgets.paragraph.Paragraph;
 import org.jline.terminal.Terminal.Signal;
 import org.jline.utils.NonBlockingReader;
 
@@ -154,7 +154,7 @@ public class CanvasDemo {
             .borderStyle(Style.EMPTY.fg(Color.CYAN))
             .title(Title.from(
                 Line.from(
-                    Span.raw(" Glimt ").bold().cyan(),
+                    Span.raw(" TamboUI ").bold().cyan(),
                     Span.raw("Canvas Demo ").yellow(),
                     Span.raw("[Marker: " + markers[currentMarker].name() + "]").dim()
                 )
@@ -260,8 +260,8 @@ public class CanvasDemo {
                 ctx.draw(new Circle(70, 30, 15, Color.BLUE));
 
                 // Lines
-                ctx.draw(new ink.glimt.widgets.canvas.shapes.Line(10, 60, 40, 90, Color.YELLOW));
-                ctx.draw(new ink.glimt.widgets.canvas.shapes.Line(40, 60, 10, 90, Color.YELLOW));
+                ctx.draw(new dev.tamboui.widgets.canvas.shapes.Line(10, 60, 40, 90, Color.YELLOW));
+                ctx.draw(new dev.tamboui.widgets.canvas.shapes.Line(40, 60, 10, 90, Color.YELLOW));
 
                 // Points
                 double[][] pointData = {
@@ -302,7 +302,7 @@ public class CanvasDemo {
                         case 2 -> Color.BLUE;
                         default -> Color.YELLOW;
                     };
-                    ctx.draw(new ink.glimt.widgets.canvas.shapes.Line(0, 0, x1, y1, color));
+                    ctx.draw(new dev.tamboui.widgets.canvas.shapes.Line(0, 0, x1, y1, color));
                 }
 
                 // Draw center circle

@@ -1,9 +1,9 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
 description = "Demo showcasing the Chart widget for line/scatter plots"
 
 application {
-    mainClass.set("ink.glimt.demo.ChartDemo")
+    mainClass.set("dev.tamboui.demo.ChartDemo")
 }

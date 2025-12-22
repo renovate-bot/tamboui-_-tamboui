@@ -1,9 +1,9 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
 description = "Demo showcasing the BarChart widget"
 
 application {
-    mainClass.set("ink.glimt.demo.BarChartDemo")
+    mainClass.set("dev.tamboui.demo.BarChartDemo")
 }

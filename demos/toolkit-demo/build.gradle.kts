@@ -1,13 +1,13 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
 description = "Demo showcasing the DSL module with Widget Playground"
 
 dependencies {
-    implementation(projects.glimtToolkit)
+    implementation(projects.tambouiToolkit)
 }
 
 application {
-    mainClass.set("ink.glimt.demo.ToolkitDemo")
+    mainClass.set("dev.tamboui.demo.ToolkitDemo")
 }

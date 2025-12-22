@@ -1,9 +1,9 @@
 plugins {
-    id("ink.glimt.demo-project")
+    id("dev.tamboui.demo-project")
 }
 
 description = "Demo showcasing the Scrollbar widget"
 
 application {
-    mainClass.set("ink.glimt.demo.ScrollbarDemo")
+    mainClass.set("dev.tamboui.demo.ScrollbarDemo")
 }
