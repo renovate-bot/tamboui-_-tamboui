@@ -93,6 +93,9 @@
     },
     "todo-list-demo": {
       "script-ref": "tamboui-widgets/demos/todo-list-demo/src/main/java/dev/tamboui/demo/TodoListDemo.java"
+    },
+    "tfx-demo": {
+      "script-ref": "demos/tfx-demo/src/main/java/dev/tamboui/demo/TFxDemo.java"
     }
   }
 }
