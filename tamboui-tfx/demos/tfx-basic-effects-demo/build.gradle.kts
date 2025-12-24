@@ -11,7 +11,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("dev.tamboui.demo.FxDemo")
+    mainClass.set("dev.tamboui.demo.TFxDemo")
 }
 
 

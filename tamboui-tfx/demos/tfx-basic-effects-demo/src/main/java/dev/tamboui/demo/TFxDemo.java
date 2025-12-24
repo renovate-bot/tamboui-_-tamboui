@@ -26,7 +26,6 @@ import dev.tamboui.layout.Layout;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Style;
-import dev.tamboui.tui.Keys;
 import dev.tamboui.tui.TuiConfig;
 import dev.tamboui.tui.TuiRunner;
 import dev.tamboui.tui.event.KeyCode;
@@ -105,26 +104,29 @@ public class TFxDemo {
         try (TuiRunner tui = TuiRunner.create(config)) {
             tui.run(
                 (event, runner) -> {
-                    if (Keys.isQuit(event)) {
-                        runner.quit();
-                        return false;
-                    }
+                   
                     
                     if (event instanceof KeyEvent) {
+
                         KeyEvent keyEvent = (KeyEvent) event;
                         
+                        if (keyEvent.isQuit()) {
+                            runner.quit();
+                            return false;
+                        }
+
                         // Navigation
-                        if (Keys.isUp(event)) {
+                        if (keyEvent.isUp()) {
                             navigateUp();
                             return true;
                         }
-                        if (Keys.isDown(event)) {
+                        if (keyEvent.isDown()) {
                             navigateDown();
                             return true;
                         }
                         
                         // Trigger effect
-                        if (keyEvent.isKey(KeyCode.ENTER) || keyEvent.isChar(' ')) {
+                        if (keyEvent.isConfirm() || keyEvent.isSelect()) {
                             triggerSelectedEffect();
                             return true;
                         }
@@ -296,22 +298,18 @@ public class TFxDemo {
             () -> Fx.coalesce(2000, Interpolation.QuadIn)
                 .withFilter(CellFilter.text())));
         
-        // Sweep effects
+        // Sweep effects (no filter - affects all cells including backgrounds)
         demos.add(new EffectDemo("Sweep In (L→R)", "Sweep",
-            () -> Fx.sweepIn(Motion.LEFT_TO_RIGHT, 10, 0, Color.BLUE, 2000, Interpolation.QuadOut)
-                .withFilter(CellFilter.text())));
+            () -> Fx.sweepIn(Motion.LEFT_TO_RIGHT, 10, 0, Color.BLUE, 2000, Interpolation.QuadOut)));
         
         demos.add(new EffectDemo("Sweep In (R→L)", "Sweep",
-            () -> Fx.sweepIn(Motion.RIGHT_TO_LEFT, 10, 0, Color.GREEN, 2000, Interpolation.QuadOut)
-                .withFilter(CellFilter.text())));
+            () -> Fx.sweepIn(Motion.RIGHT_TO_LEFT, 10, 0, Color.GREEN, 2000, Interpolation.QuadOut)));
         
         demos.add(new EffectDemo("Sweep In (U→D)", "Sweep",
-            () -> Fx.sweepIn(Motion.UP_TO_DOWN, 10, 0, Color.MAGENTA, 2000, Interpolation.QuadOut)
-                .withFilter(CellFilter.text())));
+            () -> Fx.sweepIn(Motion.UP_TO_DOWN, 10, 0, Color.MAGENTA, 2000, Interpolation.QuadOut)));
         
         demos.add(new EffectDemo("Sweep Out (D→U)", "Sweep",
-            () -> Fx.sweepOut(Motion.DOWN_TO_UP, 10, 0, Color.YELLOW, 2000, Interpolation.QuadOut)
-                .withFilter(CellFilter.text())));
+            () -> Fx.sweepOut(Motion.DOWN_TO_UP, 10, 0, Color.YELLOW, 2000, Interpolation.QuadOut)));
         
         // Paint effects
         demos.add(new EffectDemo("Paint FG", "Paint",
@@ -326,7 +324,7 @@ public class TFxDemo {
             () -> Fx.paint(Color.YELLOW, Color.CYAN, 1500, Interpolation.SineInOut)
                 .withFilter(CellFilter.text())));
         
-        // Patterns with fade
+        // Patterns with fade (affects text+symbols, not backgrounds)
         demos.add(new EffectDemo("Fade + Sweep (L→R)", "Patterns",
             () -> Fx.fadeToFg(Color.CYAN, 2000, Interpolation.SineInOut)
                 .withPattern(SweepPattern.leftToRight(15.0f))
