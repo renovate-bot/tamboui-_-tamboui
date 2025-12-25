@@ -2,11 +2,21 @@
 //JAVA 25+
 //DEPS dev.jbang:jash:LATEST
 
-import static java.lang.IO.*;
+import static dev.jbang.jash.Jash.start;
+import static java.lang.IO.println;
+import static java.nio.file.Files.exists;
+import static java.nio.file.Files.getLastModifiedTime;
+import static java.nio.file.Files.size;
 
-import java.io.IOException;
-
-import static dev.jbang.jash.Jash.*;
+String formatFileSize(long bytes) {
+    if (bytes < 1024) {
+        return bytes + " B";
+    } else if (bytes < 1024 * 1024) {
+        return String.format("%.1f KB", bytes / 1024.0);
+    } else {
+        return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
+    }
+}
 
 void main(String... args) throws IOException {
     println("Generating video...");
@@ -15,7 +25,21 @@ void main(String... args) throws IOException {
 
     Path outputDir = videosDir.resolve("output");
 
-    String pattern = args.length > 0 ? args[0] : ".*\\.tape$";
+    // Parse output formats from arguments (default to svg if none provided)
+    List<String> outputFormats = new ArrayList<>();
+    if (args.length > 0) {
+        for (String arg : args) {
+            // Treat arguments as format extensions if they look like simple alphanumeric strings
+            if (arg.matches("^[a-zA-Z0-9]+$") && arg.length() < 20) {
+                outputFormats.add(arg);
+            }
+        }
+    }
+    if (outputFormats.isEmpty()) {
+        outputFormats.add("svg"); // default format
+    }
+
+    String pattern = ".*\\.tape$";
     Pattern filter = Pattern.compile(pattern);
 
     for (Path path : Files.list(videosDir).toList()) {
@@ -25,18 +49,49 @@ void main(String... args) throws IOException {
             }
             println("Processing video: " + path.getFileName());
 
-            Path outputPath = outputDir.resolve(path.getFileName().toString().replace(".tape", ".svg"));
+            String baseName = path.getFileName().toString().replace(".tape", "");
+            List<Path> outputPaths = new ArrayList<>();
+            for (String format : outputFormats) {
+                outputPaths.add(outputDir.resolve(baseName + "." + format));
+            }
 
-            // INSERT_YOUR_CODE
-            // Only generate if path is newer than outputPath
-            if (Files.exists(outputPath)
-                    && Files.getLastModifiedTime(outputPath).toMillis() >= Files.getLastModifiedTime(path).toMillis()) {
+            // Only generate if all output paths are newer than input path
+            // Also check if shared_.tape is newer than the outputs, to handle dependency on shared config/tape
+            Path sharedTape = videosDir.resolve("shared_.tape");
+            boolean upToDate = true;
+            for (Path outputPath : outputPaths) {
+                if (!exists(outputPath)) {
+                    upToDate = false;
+                    break;
+                }
+                if (getLastModifiedTime(outputPath).compareTo(getLastModifiedTime(path)) < 0) {
+                    upToDate = false;
+                    break;
+                }
+                if (exists(sharedTape)) {
+                    if (getLastModifiedTime(outputPath).compareTo(getLastModifiedTime(sharedTape)) < 0) {
+                        upToDate = false;
+                        break;
+                    }
+                }
+            }
+            if (upToDate) {
                 println("  (up to date: skipping)");
                 continue;
             }
 
-            var cmd = start("vhs", "-o", outputPath.toString(), path.toString())
-
+            // Generate all output formats in a single command with multiple -o flags
+            List<String> cmdArgs = new ArrayList<>();
+            cmdArgs.add("vhs");
+            for (Path outputPath : outputPaths) {
+                cmdArgs.add("-o");
+                cmdArgs.add(outputPath.toString());
+            }
+            cmdArgs.add(path.toString());
+            
+            // Unpack the list to pass as varargs
+            String[] argsArray = cmdArgs.toArray(new String[0]);
+            start(argsArray[0], Arrays.copyOfRange(argsArray, 1, argsArray.length))
                     .stream()
                     .peek(System.out::println)
                     .count();
@@ -64,11 +119,19 @@ void main(String... args) throws IOException {
                                 .gallery { display: flex; flex-wrap: wrap; gap: 2em; }
                                 .item { background: #333; padding: 1em; border-radius: 8px; box-shadow: 0 2px 12px #0003; }
                                 .item h2 { font-size: 1em; margin-bottom: 0.5em; color: #ffb347; }
-                                .item img { width: 600px; max-width: 100vw; background: #222; display: block; cursor: pointer; }
+                                .item img { width: 600px; max-width: 100vw; background: #222; display: block; cursor: pointer; margin-bottom: 0.5em; }
+                                .item .variants { display: flex; flex-wrap: wrap; gap: 0.5em; margin-top: 0.5em; }
+                                .item .variants a { color: #4a9eff; text-decoration: none; padding: 0.25em 0.5em; background: #444; border-radius: 4px; font-size: 0.9em; }
+                                .item .variants a:hover { background: #555; color: #6bb3ff; }
+                                .item .variants a.smallest { background: #2d5a2d; color: #4ade80; border: 1px solid #4ade80; }
+                                .item .variants a.smallest:hover { background: #3a6b3a; color: #6ee89e; }
+                                .item .variants a.largest { background: #5a2d2d; color: #f87171; border: 1px solid #f87171; }
+                                .item .variants a.largest:hover { background: #6b3a3a; color: #fca5a5; }
                                 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); }
                                 .modal.active { display: flex; align-items: center; justify-content: center; }
                                 .modal-content { max-width: 90vw; max-height: 90vh; background: #222; padding: 2em; border-radius: 8px; position: relative; }
                                 .modal-content img { max-width: 100%; max-height: 90vh; display: block; }
+                                .modal-content video { max-width: 100%; max-height: 90vh; display: block; }
                                 .modal-close { position: absolute; top: 10px; right: 20px; color: #fafafa; font-size: 2em; font-weight: bold; cursor: pointer; line-height: 1; }
                                 .modal-close:hover { color: #ffb347; }
                             </style>
@@ -78,36 +141,146 @@ void main(String... args) throws IOException {
                             <div class="gallery">
                         """);
 
+        // Group files by base name (without extension)
+        Map<String, List<Path>> filesByBaseName = new HashMap<>();
         try (var files = Files.list(outputDir)) {
-            files.filter(f -> f.toString().endsWith(".svg")).sorted().forEach(svg -> {
-                String name = svg.getFileName().toString();
-                String baseName = name.replaceAll("\\.svg$", "");
+            files.filter(f -> !f.getFileName().toString().equals("index.html"))
+                 .sorted()
+                 .forEach(file -> {
+                String fileName = file.getFileName().toString();
+                int lastDot = fileName.lastIndexOf('.');
+                if (lastDot > 0) {
+                    String baseName = fileName.substring(0, lastDot);
+                    filesByBaseName.computeIfAbsent(baseName, k -> new ArrayList<>()).add(file);
+                }
+            });
+        }
+
+        // Generate HTML for each group
+        filesByBaseName.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> {
+                String baseName = entry.getKey();
+                List<Path> variants = entry.getValue();
+                
+                // Find preview image (prefer SVG, otherwise first non-video file)
+                List<String> videoExtensions = List.of("mp4", "webm", "ogv", "mov", "avi", "mkv");
+                Path previewImage = variants.stream()
+                    .filter(f -> {
+                        String fileName = f.getFileName().toString();
+                        String ext = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+                        return !videoExtensions.contains(ext);
+                    })
+                    .filter(f -> f.getFileName().toString().endsWith(".svg"))
+                    .findFirst()
+                    .orElse(variants.stream()
+                        .filter(f -> {
+                            String fileName = f.getFileName().toString();
+                            String ext = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+                            return !videoExtensions.contains(ext);
+                        })
+                        .findFirst()
+                        .orElse(variants.get(0)));
+                
                 try {
                     writer.write("<div class=\"item\">\n");
                     writer.write("  <h2>" + baseName + "</h2>\n");
-                    writer.write("  <img src=\"" + name + "\" alt=\"" + baseName + "\" onclick=\"openModal('" + name
+                    
+                    // Show preview image
+                    String previewName = previewImage.getFileName().toString();
+                    long previewSizeBytes = size(previewImage);
+                    String previewSize = formatFileSize(previewSizeBytes);
+                    writer.write("  <img src=\"" + previewName + "\" alt=\"" + baseName + "\" title=\"" + previewSize + "\" onclick=\"openModal('" + previewName
                             + "')\">\n");
+                    
+                    // Calculate smallest and largest file sizes for highlighting
+                    long smallestSize = variants.stream()
+                        .mapToLong(v -> {
+                            try {
+                                return size(v);
+                            } catch (IOException e) {
+                                return Long.MAX_VALUE;
+                            }
+                        })
+                        .min()
+                        .orElse(1);
+                    
+                    long largestSize = variants.stream()
+                        .mapToLong(v -> {
+                            try {
+                                return size(v);
+                            } catch (IOException e) {
+                                return 0;
+                            }
+                        })
+                        .max()
+                        .orElse(1);
+                    
+                    // Show all variants as links
+                    writer.write("  <div class=\"variants\">\n");
+                    for (Path variant : variants) {
+                        String variantName = variant.getFileName().toString();
+                        String extension = variantName.substring(variantName.lastIndexOf('.') + 1);
+                        long variantSizeBytes = size(variant);
+                        String variantSize = formatFileSize(variantSizeBytes);
+                        double percentage = (variantSizeBytes * 100.0) / largestSize;
+                        String percentageStr = String.format("%.0f%%", percentage);
+                        
+                        // Determine CSS class based on size
+                        String cssClass = "";
+                        if (variantSizeBytes == smallestSize && smallestSize != largestSize) {
+                            cssClass = " class=\"smallest\"";
+                        } else if (variantSizeBytes == largestSize && smallestSize != largestSize) {
+                            cssClass = " class=\"largest\"";
+                        }
+                        
+                        writer.write("    <a href=\"" + variantName + "\"" + cssClass + " onclick=\"event.preventDefault(); openModal('" + variantName + "');\">" 
+                                + extension.toUpperCase() + " (" + variantSize + ", " + percentageStr + ")</a>\n");
+                    }
+                    writer.write("  </div>\n");
                     writer.write("</div>\n");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
-        }
 
         writer.write("""
                     </div>
                     <div id="modal" class="modal" onclick="closeModal()">
                         <div class="modal-content" onclick="event.stopPropagation()">
                             <span class="modal-close" onclick="closeModal()">&times;</span>
-                            <img id="modal-img" src="" alt="">
+                            <img id="modal-img" src="" alt="" style="display: none;">
+                            <video id="modal-video" controls style="display: none;"></video>
                         </div>
                     </div>
                     <script>
-                        function openModal(imgSrc) {
-                            document.getElementById('modal-img').src = imgSrc;
-                            document.getElementById('modal').classList.add('active');
+                        function openModal(fileSrc) {
+                            const img = document.getElementById('modal-img');
+                            const video = document.getElementById('modal-video');
+                            const modal = document.getElementById('modal');
+                            
+                            // Check if it's a video file
+                            const videoExtensions = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv'];
+                            const extension = fileSrc.split('.').pop().toLowerCase();
+                            const isVideo = videoExtensions.includes(extension);
+                            
+                            if (isVideo) {
+                                img.style.display = 'none';
+                                video.style.display = 'block';
+                                video.src = fileSrc;
+                                video.load();
+                            } else {
+                                video.style.display = 'none';
+                                img.style.display = 'block';
+                                img.src = fileSrc;
+                            }
+                            
+                            modal.classList.add('active');
                         }
                         function closeModal() {
+                            const video = document.getElementById('modal-video');
+                            video.pause();
+                            video.currentTime = 0;
                             document.getElementById('modal').classList.remove('active');
                         }
                         document.addEventListener('keydown', function(e) {

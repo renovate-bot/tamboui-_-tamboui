@@ -8,5 +8,10 @@ Sleep 2
 Show
 
 # Recording
-Sleep 5
+Sleep 2s
+Set TypingSpeed 1s
+Down 3
+Sleep 1s
+Right 3
+Sleep 2s
 

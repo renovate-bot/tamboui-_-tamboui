@@ -2,7 +2,7 @@ Source shared_.tape
 
 # Setup
 Hide
-Type jbang helloworld-demo
+Type jbang hello-world-demo
 Enter
 Sleep 2
 Show

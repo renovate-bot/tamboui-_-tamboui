@@ -8,5 +8,7 @@ Sleep 2
 Show
 
 # Recording
-Sleep 5
+Type "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
+Type "llllllllllllllllllllhhhhhhhhhhhhhhhhhhhhhh"
+Sleep 2
 

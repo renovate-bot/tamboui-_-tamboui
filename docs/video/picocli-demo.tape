@@ -1,12 +1,18 @@
 Source shared_.tape
 
-# Setup
-Hide
 Type jbang picocli-demo
 Enter
 Sleep 2
-Show
+Type aabb
+Sleep 1
+Type q
 
-# Recording
+Type "jbang picocli-demo --help"
+Enter
+Sleep 2
+
+Type@250ms "jbang picocli-demo --items=first,second,third -c GREEN"
+Enter
 Sleep 5
+
 
