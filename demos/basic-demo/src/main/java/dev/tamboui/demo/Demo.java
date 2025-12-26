@@ -122,7 +122,7 @@ public class Demo {
         }
 
         // Handle Tab to switch focus
-        if (c == '\t' || c == 9) {
+        if (c == '\t') {
             focused = focused == FocusedWidget.LIST ? FocusedWidget.INPUT : FocusedWidget.LIST;
             return true;
         }
