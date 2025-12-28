@@ -62,6 +62,9 @@
     },
     "todo-list-demo": {
       "script-ref": "demos/todo-list-demo/src/main/java/dev/tamboui/demo/TodoListDemo.java"
+    },
+    "input-form-demo": {
+      "script-ref": "demos/input-form-demo/src/main/java/dev/tamboui/demo/InputFormDemo.java"
     }
   }
 }
