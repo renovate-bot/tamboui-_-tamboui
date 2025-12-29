@@ -164,6 +164,90 @@ class BlockTest {
     }
 
     @Test
+    @DisplayName("Block with QUADRANT_INSIDE border renders correctly")
+    void quadrantInsideBorder() {
+        // Expected rendering:
+        // ▗▄▄▄▄▄▖
+        // ▐     ▌
+        // ▐     ▌
+        // ▝▀▀▀▀▀▘
+        Rect area = new Rect(0, 0, 7, 4);
+        Block block = Block.builder()
+            .borders(Borders.ALL)
+            .borderType(BorderType.QUADRANT_INSIDE)
+            .build();
+        Buffer buffer = Buffer.empty(area);
+
+        block.render(area, buffer);
+
+        // Corners
+        assertThat(buffer.get(0, 0).symbol()).isEqualTo("▖");  // top-left
+        assertThat(buffer.get(6, 0).symbol()).isEqualTo("▗");  // top-right
+        assertThat(buffer.get(0, 3).symbol()).isEqualTo("▘");  // bottom-left
+        assertThat(buffer.get(6, 3).symbol()).isEqualTo("▝");  // bottom-right
+
+        // Top horizontal (▄ - lower half block)
+        assertThat(buffer.get(1, 0).symbol()).isEqualTo("▄");
+        assertThat(buffer.get(3, 0).symbol()).isEqualTo("▄");
+        assertThat(buffer.get(5, 0).symbol()).isEqualTo("▄");
+
+        // Bottom horizontal (▀ - upper half block)
+        assertThat(buffer.get(1, 3).symbol()).isEqualTo("▀");
+        assertThat(buffer.get(3, 3).symbol()).isEqualTo("▀");
+        assertThat(buffer.get(5, 3).symbol()).isEqualTo("▀");
+
+        // Left vertical (▐ - right half block)
+        assertThat(buffer.get(0, 1).symbol()).isEqualTo("▐");
+        assertThat(buffer.get(0, 2).symbol()).isEqualTo("▐");
+
+        // Right vertical (▌ - left half block)
+        assertThat(buffer.get(6, 1).symbol()).isEqualTo("▌");
+        assertThat(buffer.get(6, 2).symbol()).isEqualTo("▌");
+    }
+
+    @Test
+    @DisplayName("Block with QUADRANT_OUTSIDE border renders correctly")
+    void quadrantOutsideBorder() {
+        // Expected rendering:
+        // ▛▀▀▀▀▀▜
+        // ▌     ▐
+        // ▌     ▐
+        // ▙▄▄▄▄▄▟
+        Rect area = new Rect(0, 0, 7, 4);
+        Block block = Block.builder()
+            .borders(Borders.ALL)
+            .borderType(BorderType.QUADRANT_OUTSIDE)
+            .build();
+        Buffer buffer = Buffer.empty(area);
+
+        block.render(area, buffer);
+
+        // Corners
+        assertThat(buffer.get(0, 0).symbol()).isEqualTo("▛");  // top-left
+        assertThat(buffer.get(6, 0).symbol()).isEqualTo("▜");  // top-right
+        assertThat(buffer.get(0, 3).symbol()).isEqualTo("▙");  // bottom-left
+        assertThat(buffer.get(6, 3).symbol()).isEqualTo("▟");  // bottom-right
+
+        // Top horizontal (▀ - upper half block)
+        assertThat(buffer.get(1, 0).symbol()).isEqualTo("▀");
+        assertThat(buffer.get(3, 0).symbol()).isEqualTo("▀");
+        assertThat(buffer.get(5, 0).symbol()).isEqualTo("▀");
+
+        // Bottom horizontal (▄ - lower half block)
+        assertThat(buffer.get(1, 3).symbol()).isEqualTo("▄");
+        assertThat(buffer.get(3, 3).symbol()).isEqualTo("▄");
+        assertThat(buffer.get(5, 3).symbol()).isEqualTo("▄");
+
+        // Left vertical (▌ - left half block)
+        assertThat(buffer.get(0, 1).symbol()).isEqualTo("▌");
+        assertThat(buffer.get(0, 2).symbol()).isEqualTo("▌");
+
+        // Right vertical (▐ - right half block)
+        assertThat(buffer.get(6, 1).symbol()).isEqualTo("▐");
+        assertThat(buffer.get(6, 2).symbol()).isEqualTo("▐");
+    }
+
+    @Test
     @DisplayName("Title with merge strategy preserves existing titles")
     void titleWithMergeStrategyPreservesExisting() {
         Rect area = new Rect(0, 0, 20, 5);
@@ -571,7 +655,7 @@ class BlockTest {
         try {
             String expectedContent = loadResourceFile("dev/tamboui/widgets/block/" + resourceFile);
             Buffer expected = parseExpectedBufferFromContent(expectedContent);
-            
+
             // Compare the entire buffer directly, just like Ratatui does
             assertThat(buffer).isEqualTo(expected);
         } catch (IOException e) {
@@ -615,7 +699,7 @@ class BlockTest {
         // Normalize line endings (handle both \n and \r\n)
         content = content.replace("\r\n", "\n").replace("\r", "\n");
         String[] lines = content.split("\n");
-        
+
         if (lines.length == 0) {
             return Buffer.empty(new Rect(0, 0, 0, 0));
         }
