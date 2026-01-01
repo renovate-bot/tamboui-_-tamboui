@@ -204,7 +204,7 @@ public final class TableElement extends StyledElement<TableElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
@@ -212,7 +212,7 @@ public final class TableElement extends StyledElement<TableElement> {
         Table.Builder builder = Table.builder()
             .rows(rows)
             .widths(widths)
-            .style(style)
+            .style(context.currentStyle())
             .highlightStyle(highlightStyle)
             .highlightSymbol(highlightSymbol)
             .columnSpacing(columnSpacing);

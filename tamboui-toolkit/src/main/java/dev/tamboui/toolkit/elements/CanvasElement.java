@@ -162,7 +162,7 @@ public final class CanvasElement extends StyledElement<CanvasElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }

@@ -90,7 +90,9 @@ public class TodoController {
     }
 
     public void moveDown() {
-        if (selectedIndex < items.size() - 1) selectedIndex++;
+        if (selectedIndex < items.size() - 1) {
+            selectedIndex++;
+        }
     }
 
     public void toggleSelected() {
@@ -1396,7 +1398,9 @@ public class TodoApp {
             var prefix = item.done() ? "[x] " : "[ ] ";
             var elem = text(prefix + item.text());
 
-            if (index == ctrl.cursor()) elem = elem.reversed();
+            if (index == ctrl.cursor()) {
+                elem = elem.reversed();
+            }
             if (item.done()) {
                 elem = elem.dim().crossedOut();
             }

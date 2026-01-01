@@ -4,6 +4,8 @@
  */
 package dev.tamboui.toolkit.element;
 
+import dev.tamboui.css.Styleable;
+import dev.tamboui.css.cascade.ResolvedStyle;
 import dev.tamboui.toolkit.event.DragHandler;
 import dev.tamboui.toolkit.event.EventResult;
 import dev.tamboui.toolkit.event.KeyEventHandler;
@@ -12,22 +14,31 @@ import dev.tamboui.layout.Constraint;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Style;
+import dev.tamboui.terminal.Frame;
 import dev.tamboui.tui.event.KeyEvent;
 import dev.tamboui.tui.event.MouseEvent;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
  * Abstract base for elements that support styling and event handling.
  * Provides a fluent API for setting colors, modifiers, and event handlers.
+ * <p>
+ * Implements {@link Styleable} to support CSS-based styling.
  *
  * @param <T> the concrete element type for method chaining
  */
-public abstract class StyledElement<T extends StyledElement<T>> implements Element {
+public abstract class StyledElement<T extends StyledElement<T>> implements Element, Styleable {
 
     protected Style style = Style.EMPTY;
     protected Constraint layoutConstraint;
     protected String elementId;
+    protected Set<String> cssClasses = new LinkedHashSet<>();
+    protected Styleable cssParent;
     protected KeyEventHandler keyHandler;
     protected MouseEventHandler mouseHandler;
     protected DragHandler dragHandler;
@@ -167,6 +178,73 @@ public abstract class StyledElement<T extends StyledElement<T>> implements Eleme
         return style;
     }
 
+    /**
+     * Resolves the effective style by merging CSS and inline styles.
+     * CSS styles provide the base, inline styles override.
+     * <p>
+     * This method is private because it should only be called once per render,
+     * from the {@link #render} template method. Subclasses should use
+     * {@link RenderContext#currentStyle()} to access the resolved style.
+     *
+     * @param context the render context for CSS resolution
+     * @return the effective style combining CSS and inline styles
+     */
+    private Style resolveEffectiveStyle(RenderContext context) {
+        Optional<ResolvedStyle> cssStyle = context.resolveStyle(this);
+        // CSS provides base, inline style overrides
+        return cssStyle.map(resolvedStyle -> resolvedStyle.toStyle().patch(style)).orElseGet(() -> style);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Render template method
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Renders this element. This is a template method that:
+     * <ol>
+     *   <li>Resolves the effective CSS + inline style</li>
+     *   <li>Pushes the style onto the context's style stack</li>
+     *   <li>Calls {@link #renderContent} for subclass-specific rendering</li>
+     *   <li>Pops the style when done</li>
+     * </ol>
+     * <p>
+     * Subclasses must implement {@link #renderContent} instead of overriding this method.
+     * The current style is available via {@link RenderContext#currentStyle()}.
+     *
+     * @param frame the frame to render to
+     * @param area the area to render in
+     * @param context the render context
+     */
+    @Override
+    public final void render(Frame frame, Rect area, RenderContext context) {
+        if (area.isEmpty()) {
+            return;
+        }
+        this.lastRenderedArea = area;
+        Style effectiveStyle = resolveEffectiveStyle(context);
+
+        if (context instanceof DefaultRenderContext) {
+            DefaultRenderContext ctx = (DefaultRenderContext) context;
+            ctx.withStyle(effectiveStyle, () -> renderContent(frame, area, context));
+        } else {
+            // Fallback for non-default contexts (e.g., testing)
+            renderContent(frame, area, context);
+        }
+    }
+
+    /**
+     * Renders the content of this element.
+     * <p>
+     * Subclasses implement this method to perform their specific rendering.
+     * The current style (CSS + inline, merged with parent styles) is available
+     * via {@link RenderContext#currentStyle()}.
+     *
+     * @param frame the frame to render to
+     * @param area the area to render in
+     * @param context the render context
+     */
+    protected abstract void renderContent(Frame frame, Rect area, RenderContext context);
+
     // Layout constraint
 
     public T constraint(Constraint constraint) {
@@ -213,6 +291,83 @@ public abstract class StyledElement<T extends StyledElement<T>> implements Eleme
     @Override
     public String id() {
         return elementId;
+    }
+
+    // CSS classes
+
+    /**
+     * Adds one or more CSS classes to this element.
+     *
+     * @param classes the class names to add
+     * @return this element for chaining
+     */
+    public T addClass(String... classes) {
+        for (String c : classes) {
+            if (c != null && !c.isEmpty()) {
+                this.cssClasses.add(c);
+            }
+        }
+        return self();
+    }
+
+    /**
+     * Removes a CSS class from this element.
+     *
+     * @param className the class name to remove
+     * @return this element for chaining
+     */
+    public T removeClass(String className) {
+        this.cssClasses.remove(className);
+        return self();
+    }
+
+    /**
+     * Toggles a CSS class based on a condition.
+     *
+     * @param className the class name to toggle
+     * @param condition true to add the class, false to remove it
+     * @return this element for chaining
+     */
+    public T toggleClass(String className, boolean condition) {
+        if (condition) {
+            this.cssClasses.add(className);
+        } else {
+            this.cssClasses.remove(className);
+        }
+        return self();
+    }
+
+    /**
+     * Sets the CSS parent for ancestor matching.
+     *
+     * @param parent the parent element
+     * @return this element for chaining
+     */
+    public T cssParent(Styleable parent) {
+        this.cssParent = parent;
+        return self();
+    }
+
+    // Styleable interface implementation
+
+    @Override
+    public String styleType() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public Optional<String> cssId() {
+        return Optional.ofNullable(elementId);
+    }
+
+    @Override
+    public Set<String> cssClasses() {
+        return Collections.unmodifiableSet(cssClasses);
+    }
+
+    @Override
+    public Optional<Styleable> cssParent() {
+        return Optional.ofNullable(cssParent);
     }
 
     // Event handlers
@@ -304,13 +459,6 @@ public abstract class StyledElement<T extends StyledElement<T>> implements Eleme
     @Override
     public Rect renderedArea() {
         return lastRenderedArea;
-    }
-
-    /**
-     * Called by the render system to track the rendered area.
-     */
-    public void setRenderedArea(Rect area) {
-        this.lastRenderedArea = area;
     }
 
     @Override

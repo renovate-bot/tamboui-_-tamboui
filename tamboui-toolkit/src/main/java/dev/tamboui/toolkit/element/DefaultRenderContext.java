@@ -4,10 +4,22 @@
  */
 package dev.tamboui.toolkit.element;
 
+import dev.tamboui.css.Styleable;
+import dev.tamboui.css.cascade.PseudoClassState;
+import dev.tamboui.css.cascade.ResolvedStyle;
+import dev.tamboui.css.engine.StyleEngine;
+import dev.tamboui.style.Color;
+import dev.tamboui.style.Style;
 import dev.tamboui.toolkit.event.EventRouter;
 import dev.tamboui.toolkit.focus.FocusManager;
 import dev.tamboui.toolkit.component.ComponentTree;
 import dev.tamboui.layout.Rect;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Default implementation of RenderContext with internal framework methods.
@@ -20,6 +32,8 @@ public final class DefaultRenderContext implements RenderContext {
     private final FocusManager focusManager;
     private final ComponentTree componentTree;
     private final EventRouter eventRouter;
+    private final Deque<Style> styleStack = new ArrayDeque<>();
+    private StyleEngine styleEngine;
 
     public DefaultRenderContext(FocusManager focusManager, ComponentTree componentTree, EventRouter eventRouter) {
         this.focusManager = focusManager;
@@ -35,6 +49,22 @@ public final class DefaultRenderContext implements RenderContext {
         return new DefaultRenderContext(fm, new ComponentTree(), new EventRouter(fm));
     }
 
+    /**
+     * Sets the style engine for CSS resolution.
+     *
+     * @param styleEngine the style engine, or null to disable CSS
+     */
+    public void setStyleEngine(StyleEngine styleEngine) {
+        this.styleEngine = styleEngine;
+    }
+
+    /**
+     * Returns the style engine, if configured.
+     */
+    public Optional<StyleEngine> styleEngine() {
+        return Optional.ofNullable(styleEngine);
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // Public API (from RenderContext interface)
     // ═══════════════════════════════════════════════════════════════
@@ -47,6 +77,51 @@ public final class DefaultRenderContext implements RenderContext {
     @Override
     public boolean hasFocus() {
         return focusManager.focusedId() != null;
+    }
+
+    @Override
+    public Optional<ResolvedStyle> resolveStyle(Styleable element) {
+        if (styleEngine == null) {
+            return Optional.empty();
+        }
+
+        // Build pseudo-class state based on focus
+        PseudoClassState state = PseudoClassState.NONE;
+        if (element instanceof Element) {
+            Element e = (Element) element;
+            if (e.id() != null && isFocused(e.id())) {
+                state = PseudoClassState.ofFocused();
+            }
+        }
+
+        // Build ancestor chain
+        List<Styleable> ancestors = buildAncestorChain(element);
+
+        ResolvedStyle resolved = styleEngine.resolve(element, state, ancestors);
+        return resolved.hasProperties() ? Optional.of(resolved) : Optional.empty();
+    }
+
+    @Override
+    public Optional<Color> parseColor(String colorValue) {
+        if (styleEngine == null || colorValue == null) {
+            return Optional.empty();
+        }
+        return styleEngine.parseColor(colorValue);
+    }
+
+    @Override
+    public Style currentStyle() {
+        return styleStack.isEmpty() ? Style.EMPTY : styleStack.peek();
+    }
+
+    private List<Styleable> buildAncestorChain(Styleable element) {
+        List<Styleable> ancestors = new ArrayList<>();
+        Optional<Styleable> parent = element.cssParent();
+        while (parent.isPresent()) {
+            ancestors.add(0, parent.get());
+            parent = parent.get().cssParent();
+        }
+        return ancestors;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -93,6 +168,28 @@ public final class DefaultRenderContext implements RenderContext {
         eventRouter.registerElement(element, area);
         if (element.isFocusable() && element.id() != null) {
             focusManager.registerFocusable(element.id(), area);
+        }
+    }
+
+    /**
+     * Executes an action with a style pushed onto the style stack.
+     * <p>
+     * The style is merged with the current style (current style provides base,
+     * new style overrides). After the action completes, the style is popped.
+     * <p>
+     * Internal use only - called by StyledElement.render().
+     *
+     * @param style the style to push
+     * @param action the action to execute
+     */
+    public void withStyle(Style style, Runnable action) {
+        // Merge new style onto current style
+        Style merged = currentStyle().patch(style);
+        styleStack.push(merged);
+        try {
+            action.run();
+        } finally {
+            styleStack.pop();
         }
     }
 }

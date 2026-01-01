@@ -23,8 +23,10 @@ import dev.tamboui.toolkit.elements.SparklineElement;
 import dev.tamboui.toolkit.elements.TableElement;
 import dev.tamboui.toolkit.elements.TabsElement;
 import dev.tamboui.toolkit.elements.TextElement;
+import dev.tamboui.toolkit.elements.TextAreaElement;
 import dev.tamboui.toolkit.elements.TextInputElement;
 import dev.tamboui.layout.Constraint;
+import dev.tamboui.widgets.input.TextAreaState;
 import dev.tamboui.widgets.input.TextInputState;
 import dev.tamboui.widgets.scrollbar.ScrollbarState;
 import dev.tamboui.tui.event.KeyCode;
@@ -548,6 +550,27 @@ public final class Toolkit {
      */
     public static TextInputElement textInput() {
         return new TextInputElement();
+    }
+
+    // ==================== Text Area ====================
+
+    /**
+     * Creates a text area with the given state.
+     *
+     * @param state the text area state
+     * @return a new text area element
+     */
+    public static TextAreaElement textArea(TextAreaState state) {
+        return new TextAreaElement(state);
+    }
+
+    /**
+     * Creates a text area with a new state.
+     *
+     * @return a new text area element
+     */
+    public static TextAreaElement textArea() {
+        return new TextAreaElement();
     }
 
     // ==================== Bar Chart ====================

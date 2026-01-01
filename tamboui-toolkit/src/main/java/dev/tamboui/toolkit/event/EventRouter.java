@@ -55,11 +55,6 @@ public final class EventRouter {
     public void registerElement(Element element, Rect area) {
         elements.add(element);
         elementAreas.put(element, area);
-        // Also set on StyledElement for backwards compatibility
-        if (element instanceof StyledElement) {
-            StyledElement<?> styled = (StyledElement<?>) element;
-            styled.setRenderedArea(area);
-        }
     }
 
     /**

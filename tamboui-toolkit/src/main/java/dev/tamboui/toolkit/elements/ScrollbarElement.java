@@ -209,14 +209,14 @@ public final class ScrollbarElement extends StyledElement<ScrollbarElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
 
         Scrollbar.Builder builder = Scrollbar.builder()
             .orientation(orientation)
-            .style(style);
+            .style(context.currentStyle());
 
         if (symbols != null) {
             builder.symbols(symbols);

@@ -2,6 +2,7 @@ rootProject.name = "tamboui-parent"
 
 include(
     "tamboui-core",
+    "tamboui-css",
     "tamboui-widgets",
     "tamboui-jline",
     "tamboui-tui",

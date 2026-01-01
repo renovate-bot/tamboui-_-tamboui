@@ -8,4 +8,5 @@ dependencies {
     api(projects.tambouiCore)
     api(projects.tambouiWidgets)
     api(projects.tambouiTui)
+    api(projects.tambouiCss)
 }

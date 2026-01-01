@@ -172,14 +172,14 @@ public final class SparklineElement extends StyledElement<SparklineElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
 
         Sparkline.Builder builder = Sparkline.builder()
             .data(data)
-            .style(style)
+            .style(context.currentStyle())
             .barSet(barSet)
             .direction(direction);
 

@@ -155,14 +155,14 @@ public final class TabsElement extends StyledElement<TabsElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
 
         Tabs.Builder builder = Tabs.builder()
             .titles(titles.toArray(new String[0]))
-            .style(style)
+            .style(context.currentStyle())
             .highlightStyle(highlightStyle)
             .divider(divider)
             .padding(paddingLeft, paddingRight);

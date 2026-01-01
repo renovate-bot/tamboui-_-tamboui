@@ -1,0 +1,398 @@
+/*
+ * Copyright (c) 2025 TamboUI Contributors
+ * SPDX-License-Identifier: MIT
+ */
+package dev.tamboui.css.engine;
+
+import dev.tamboui.css.Styleable;
+import dev.tamboui.css.cascade.CascadeResolver;
+import dev.tamboui.css.cascade.PseudoClassState;
+import dev.tamboui.css.cascade.ResolvedStyle;
+import dev.tamboui.css.model.Rule;
+import dev.tamboui.css.model.Stylesheet;
+import dev.tamboui.css.parser.CssParser;
+import dev.tamboui.css.property.PropertyRegistry;
+import dev.tamboui.style.Color;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+/**
+ * Main entry point for CSS styling.
+ * <p>
+ * The StyleEngine manages stylesheets, resolves styles for elements,
+ * and supports live stylesheet switching for theming.
+ * <p>
+ * Usage:
+ * <pre>
+ * StyleEngine engine = StyleEngine.create();
+ * engine.loadStylesheet("dark", "/themes/dark.tcss");
+ * engine.loadStylesheet("light", "/themes/light.tcss");
+ * engine.setActiveStylesheet("dark");
+ *
+ * // Switch themes at runtime
+ * engine.setActiveStylesheet("light");
+ * </pre>
+ */
+public final class StyleEngine {
+
+    private final Map<String, StylesheetEntry> namedStylesheets;
+    private final List<Stylesheet> inlineStylesheets;
+    private final CascadeResolver cascadeResolver;
+    private final PropertyRegistry propertyRegistry;
+    private final List<StyleChangeListener> listeners;
+
+    private String activeStylesheetName;
+
+    private StyleEngine(PropertyRegistry propertyRegistry) {
+        this.namedStylesheets = new LinkedHashMap<>();
+        this.inlineStylesheets = new ArrayList<>();
+        this.cascadeResolver = new CascadeResolver(propertyRegistry);
+        this.propertyRegistry = propertyRegistry;
+        this.listeners = new CopyOnWriteArrayList<>();
+        this.activeStylesheetName = null;
+    }
+
+    /**
+     * Creates a new StyleEngine with default configuration.
+     *
+     * @return a new StyleEngine
+     */
+    public static StyleEngine create() {
+        return new StyleEngine(PropertyRegistry.createDefault());
+    }
+
+    /**
+     * Creates a StyleEngine with a custom property registry.
+     *
+     * @param propertyRegistry the property registry
+     * @return a new StyleEngine
+     */
+    public static StyleEngine create(PropertyRegistry propertyRegistry) {
+        return new StyleEngine(propertyRegistry);
+    }
+
+    // --- Stylesheet Loading ---
+
+    /**
+     * Loads a stylesheet from the classpath.
+     *
+     * @param classpathResource the classpath resource path (e.g., "/styles/app.tcss")
+     * @throws IOException if the resource cannot be read
+     */
+    public void loadStylesheet(String classpathResource) throws IOException {
+        String css = readClasspathResource(classpathResource);
+        Stylesheet stylesheet = CssParser.parse(css);
+        inlineStylesheets.add(stylesheet);
+    }
+
+    /**
+     * Loads a named stylesheet from the classpath.
+     * <p>
+     * Named stylesheets can be switched at runtime using {@link #setActiveStylesheet(String)}.
+     *
+     * @param name              the stylesheet name (e.g., "dark", "light")
+     * @param classpathResource the classpath resource path
+     * @throws IOException if the resource cannot be read
+     */
+    public void loadStylesheet(String name, String classpathResource) throws IOException {
+        String css = readClasspathResource(classpathResource);
+        Stylesheet stylesheet = CssParser.parse(css);
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, classpathResource, null));
+
+        // Auto-activate first loaded stylesheet
+        if (activeStylesheetName == null) {
+            activeStylesheetName = name;
+        }
+    }
+
+    /**
+     * Loads a stylesheet from a file path.
+     *
+     * @param path the file path
+     * @throws IOException if the file cannot be read
+     */
+    public void loadStylesheet(Path path) throws IOException {
+        String css = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+        Stylesheet stylesheet = CssParser.parse(css);
+        inlineStylesheets.add(stylesheet);
+    }
+
+    /**
+     * Loads a named stylesheet from a file path.
+     *
+     * @param name the stylesheet name
+     * @param path the file path
+     * @throws IOException if the file cannot be read
+     */
+    public void loadStylesheet(String name, Path path) throws IOException {
+        String css = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+        Stylesheet stylesheet = CssParser.parse(css);
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, null, path));
+
+        if (activeStylesheetName == null) {
+            activeStylesheetName = name;
+        }
+    }
+
+    /**
+     * Adds an inline stylesheet from a CSS string.
+     *
+     * @param css the CSS source code
+     */
+    public void addStylesheet(String css) {
+        Stylesheet stylesheet = CssParser.parse(css);
+        inlineStylesheets.add(stylesheet);
+    }
+
+    /**
+     * Adds a named inline stylesheet.
+     *
+     * @param name the stylesheet name
+     * @param css  the CSS source code
+     */
+    public void addStylesheet(String name, String css) {
+        Stylesheet stylesheet = CssParser.parse(css);
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, null, null));
+
+        if (activeStylesheetName == null) {
+            activeStylesheetName = name;
+        }
+    }
+
+    // --- Stylesheet Switching ---
+
+    /**
+     * Sets the active named stylesheet.
+     * <p>
+     * This enables live theme switching - the UI will use the new
+     * stylesheet on the next render cycle.
+     *
+     * @param name the stylesheet name
+     * @throws IllegalArgumentException if no stylesheet with that name exists
+     */
+    public void setActiveStylesheet(String name) {
+        if (!namedStylesheets.containsKey(name)) {
+            throw new IllegalArgumentException("No stylesheet named: " + name);
+        }
+        String oldName = activeStylesheetName;
+        activeStylesheetName = name;
+
+        if (!Objects.equals(oldName, name)) {
+            notifyListeners();
+        }
+    }
+
+    /**
+     * Returns the name of the active stylesheet.
+     *
+     * @return the active stylesheet name, or empty if none set
+     */
+    public Optional<String> getActiveStylesheet() {
+        return Optional.ofNullable(activeStylesheetName);
+    }
+
+    /**
+     * Returns the names of all loaded named stylesheets.
+     *
+     * @return the stylesheet names
+     */
+    public Set<String> getStylesheetNames() {
+        return Collections.unmodifiableSet(namedStylesheets.keySet());
+    }
+
+    /**
+     * Reloads a named stylesheet from its original source.
+     * <p>
+     * Useful for hot-reload during development.
+     *
+     * @param name the stylesheet name
+     * @throws IOException if the stylesheet cannot be reloaded
+     */
+    public void reloadStylesheet(String name) throws IOException {
+        StylesheetEntry entry = namedStylesheets.get(name);
+        if (entry == null) {
+            throw new IllegalArgumentException("No stylesheet named: " + name);
+        }
+
+        String css;
+        if (entry.classpathResource != null) {
+            css = readClasspathResource(entry.classpathResource);
+        } else if (entry.filePath != null) {
+            css = new String(Files.readAllBytes(entry.filePath), StandardCharsets.UTF_8);
+        } else {
+            // Inline stylesheet - cannot reload
+            return;
+        }
+
+        Stylesheet stylesheet = CssParser.parse(css);
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, entry.classpathResource, entry.filePath));
+
+        if (name.equals(activeStylesheetName)) {
+            notifyListeners();
+        }
+    }
+
+    // --- Style Resolution ---
+
+    /**
+     * Resolves the style for an element.
+     *
+     * @param element   the element to style
+     * @param state     the pseudo-class state
+     * @param ancestors the ancestor chain
+     * @return the resolved style
+     */
+    public ResolvedStyle resolve(Styleable element,
+                                  PseudoClassState state,
+                                  List<Styleable> ancestors) {
+        List<Rule> allRules = collectRules();
+        Map<String, String> allVariables = collectVariables();
+
+        return cascadeResolver.resolve(element, state, ancestors, allRules, allVariables);
+    }
+
+    /**
+     * Resolves the style for an element with default state and no ancestors.
+     *
+     * @param element the element to style
+     * @return the resolved style
+     */
+    public ResolvedStyle resolve(Styleable element) {
+        return resolve(element, PseudoClassState.NONE, Collections.<Styleable>emptyList());
+    }
+
+    /**
+     * Parses a CSS color value string into a Color.
+     * <p>
+     * Supports named colors (e.g., "red", "blue"), hex colors (e.g., "#ff0000"),
+     * and RGB notation (e.g., "rgb(255,0,0)"), as well as CSS variables.
+     *
+     * @param colorValue the CSS color value string
+     * @return the parsed color, or empty if parsing fails
+     */
+    public Optional<Color> parseColor(String colorValue) {
+        if (colorValue == null || colorValue.isEmpty()) {
+            return Optional.empty();
+        }
+        Map<String, String> variables = collectVariables();
+        return propertyRegistry.convertColor(colorValue, variables);
+    }
+
+    // --- Change Listeners ---
+
+    /**
+     * Adds a listener to be notified when the active stylesheet changes.
+     *
+     * @param listener the listener
+     */
+    public void addChangeListener(StyleChangeListener listener) {
+        listeners.add(listener);
+    }
+
+    /**
+     * Removes a change listener.
+     *
+     * @param listener the listener
+     */
+    public void removeChangeListener(StyleChangeListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyListeners() {
+        for (StyleChangeListener listener : listeners) {
+            listener.onStyleChange();
+        }
+    }
+
+    // --- Internal Methods ---
+
+    private List<Rule> collectRules() {
+        List<Rule> rules = new ArrayList<>();
+
+        // Add rules from inline stylesheets
+        for (Stylesheet stylesheet : inlineStylesheets) {
+            rules.addAll(stylesheet.rules());
+        }
+
+        // Add rules from active named stylesheet
+        if (activeStylesheetName != null) {
+            StylesheetEntry entry = namedStylesheets.get(activeStylesheetName);
+            if (entry != null) {
+                rules.addAll(entry.stylesheet.rules());
+            }
+        }
+
+        return rules;
+    }
+
+    private Map<String, String> collectVariables() {
+        Map<String, String> variables = new LinkedHashMap<>();
+
+        // Collect from inline stylesheets
+        for (Stylesheet stylesheet : inlineStylesheets) {
+            variables.putAll(stylesheet.variables());
+        }
+
+        // Collect from active named stylesheet (overrides inline)
+        if (activeStylesheetName != null) {
+            StylesheetEntry entry = namedStylesheets.get(activeStylesheetName);
+            if (entry != null) {
+                variables.putAll(entry.stylesheet.variables());
+            }
+        }
+
+        return variables;
+    }
+
+    private String readClasspathResource(String resource) throws IOException {
+        InputStream is = getClass().getResourceAsStream(resource);
+        if (is == null) {
+            // Try without leading slash
+            is = getClass().getClassLoader().getResourceAsStream(
+                    resource.startsWith("/") ? resource.substring(1) : resource);
+        }
+        if (is == null) {
+            throw new IOException("Classpath resource not found: " + resource);
+        }
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Listener for stylesheet changes.
+     */
+    public interface StyleChangeListener {
+        /**
+         * Called when the active stylesheet changes.
+         */
+        void onStyleChange();
+    }
+
+    /**
+     * Internal entry for named stylesheets.
+     */
+    private static final class StylesheetEntry {
+        final Stylesheet stylesheet;
+        final String classpathResource;
+        final Path filePath;
+
+        StylesheetEntry(Stylesheet stylesheet, String classpathResource, Path filePath) {
+            this.stylesheet = stylesheet;
+            this.classpathResource = classpathResource;
+            this.filePath = filePath;
+        }
+    }
+}

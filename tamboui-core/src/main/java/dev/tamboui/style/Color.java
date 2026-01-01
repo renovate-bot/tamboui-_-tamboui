@@ -211,11 +211,11 @@ public interface Color {
     Color BLUE = new Ansi(AnsiColor.BLUE);
     Color MAGENTA = new Ansi(AnsiColor.MAGENTA);
     Color CYAN = new Ansi(AnsiColor.CYAN);
-    Color WHITE = new Ansi(AnsiColor.WHITE);
-    Color GRAY = new Ansi(AnsiColor.BRIGHT_BLACK);
+    Color WHITE = new Ansi(AnsiColor.BRIGHT_WHITE);
+    Color GRAY = new Ansi(AnsiColor.WHITE);  // ANSI WHITE (7) renders as light gray
 
     // Bright ANSI colors
-    Color DARK_GRAY = new Ansi(AnsiColor.BRIGHT_BLACK);
+    Color DARK_GRAY = new Ansi(AnsiColor.BRIGHT_BLACK);  // ANSI BRIGHT_BLACK (8) renders as dark gray
     Color LIGHT_RED = new Ansi(AnsiColor.BRIGHT_RED);
     Color LIGHT_GREEN = new Ansi(AnsiColor.BRIGHT_GREEN);
     Color LIGHT_YELLOW = new Ansi(AnsiColor.BRIGHT_YELLOW);

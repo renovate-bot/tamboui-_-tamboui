@@ -21,6 +21,9 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+application {
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
+}
 
 graalvmNative {
     binaries {
@@ -38,6 +41,11 @@ graalvmNative {
                 "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                 "--add-opens", "java.base/java.io=ALL-UNNAMED"
             )
+            resources {
+                autodetection {
+                    enabled = true
+                }
+            }
         }
     }
 

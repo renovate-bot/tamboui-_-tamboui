@@ -4,9 +4,12 @@
  */
 package dev.tamboui.toolkit.elements;
 
+import dev.tamboui.css.cascade.ResolvedStyle;
 import dev.tamboui.toolkit.element.RenderContext;
 import dev.tamboui.toolkit.element.StyledElement;
+import dev.tamboui.layout.Alignment;
 import dev.tamboui.layout.Rect;
+import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
@@ -21,6 +24,7 @@ public final class TextElement extends StyledElement<TextElement> {
 
     private final String content;
     private Overflow overflow = Overflow.CLIP;
+    private Alignment alignment;
 
     public TextElement(String content) {
         this.content = content != null ? content : "";
@@ -78,18 +82,63 @@ public final class TextElement extends StyledElement<TextElement> {
         return this;
     }
 
+    /**
+     * Sets the text alignment.
+     *
+     * @param alignment the alignment
+     * @return this element for chaining
+     */
+    public TextElement alignment(Alignment alignment) {
+        this.alignment = alignment;
+        return this;
+    }
+
+    /**
+     * Centers the text horizontally.
+     *
+     * @return this element for chaining
+     */
+    public TextElement centered() {
+        this.alignment = Alignment.CENTER;
+        return this;
+    }
+
+    /**
+     * Aligns text to the right.
+     *
+     * @return this element for chaining
+     */
+    public TextElement right() {
+        this.alignment = Alignment.RIGHT;
+        return this;
+    }
+
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
-        if (area.isEmpty() || content.isEmpty()) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
+        if (content.isEmpty()) {
             return;
         }
 
+        // Get the current style from the context (already resolved by StyledElement.render)
+        Style effectiveStyle = context.currentStyle();
+
+        // Get alignment: programmatic > CSS > left (default)
+        Alignment effectiveAlignment = this.alignment;
+        if (effectiveAlignment == null) {
+            effectiveAlignment = context.resolveStyle(this)
+                .flatMap(ResolvedStyle::alignment)
+                .orElse(Alignment.LEFT);
+        }
+
         // Create a styled span and render as a paragraph
-        Span span = Span.styled(content, style);
+        Span span = Span.styled(content, effectiveStyle);
         Paragraph paragraph = Paragraph.builder()
             .text(Text.from(Line.from(span)))
+            .style(effectiveStyle)
+            .alignment(effectiveAlignment)
             .overflow(overflow)
             .build();
         frame.renderWidget(paragraph, area);
     }
+
 }

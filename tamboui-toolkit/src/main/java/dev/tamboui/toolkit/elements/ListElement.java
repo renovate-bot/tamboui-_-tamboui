@@ -223,7 +223,7 @@ public final class ListElement<T> extends StyledElement<ListElement<T>> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
@@ -253,7 +253,7 @@ public final class ListElement<T> extends StyledElement<ListElement<T>> {
 
         ListWidget.Builder builder = ListWidget.builder()
             .items(effectiveItems)
-            .style(style)
+            .style(context.currentStyle())
             .highlightStyle(highlightStyle)
             .highlightSymbol(highlightSymbol);
 
