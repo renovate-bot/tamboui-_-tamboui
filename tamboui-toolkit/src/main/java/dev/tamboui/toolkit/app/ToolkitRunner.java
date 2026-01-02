@@ -119,21 +119,26 @@ public final class ToolkitRunner implements AutoCloseable {
     }
 
     private boolean handleEvent(Event event) {
-        // Handle quit
-        if (Keys.isQuit(event)) {
-            quit();
-            return false;
-        }
-
         // Tick events always trigger a redraw for animations
         if (event instanceof TickEvent) {
             return true;
         }
 
-        // Route to elements - they handle their own events
+        // Route to elements first - they handle their own events
         EventResult result = eventRouter.route(event);
 
-        return result.isHandled();
+        // If event was handled by an element, don't check for quit
+        if (result.isHandled()) {
+            return true;
+        }
+
+        // Handle quit only if event wasn't consumed by an element
+        if (Keys.isQuit(event)) {
+            quit();
+            return false;
+        }
+
+        return false;
     }
 
     /**

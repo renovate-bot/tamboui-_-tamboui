@@ -100,6 +100,10 @@ public final class DirectoryBrowserController {
         return markedFiles.size();
     }
 
+    public int visibleRows() {
+        return visibleRows;
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // COMMANDS - Modify state
     // ═══════════════════════════════════════════════════════════════

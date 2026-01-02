@@ -36,9 +36,9 @@ public class FileManagerView implements Element {
 
         // Build and render the UI tree
         var ui = column(
-            header(),
-            browserRow(context),
-            helpBar()
+                header(),
+                browserRow(context),
+                helpBar()
         );
         ui.render(frame, area, context);
 
@@ -83,15 +83,15 @@ public class FileManagerView implements Element {
         // Confirmation dialogs don't use Enter for confirm (they use y/n)
         // so we just create a simple dialog without onConfirm
         currentDialog = dialog(title,
-            text(message),
-            text(""),
-            text(type == FileManagerController.DialogType.ERROR
-                ? "[Enter] OK"
-                : "[y] Yes  [n] No  [Esc] Cancel").dim()
+                text(message),
+                text(""),
+                text(type == FileManagerController.DialogType.ERROR
+                        ? "[Enter] OK"
+                        : "[y] Yes  [n] No  [Esc] Cancel").dim()
         ).rounded()
-         .borderColor(titleColor)
-         .width(Math.max(40, message.length() + 4))
-         .onCancel(manager::dismissDialog);
+                .borderColor(titleColor)
+                .width(Math.max(40, message.length() + 4))
+                .onCancel(manager::dismissDialog);
 
         // For error dialogs, Enter also dismisses
         if (type == FileManagerController.DialogType.ERROR) {
@@ -103,14 +103,14 @@ public class FileManagerView implements Element {
 
     private DialogElement createInputDialog(String title, String prompt, Runnable onConfirm) {
         return dialog(title,
-            text(prompt),
-            textInput(manager.inputState()).cursorStyle(dev.tamboui.style.Style.EMPTY.fg(Color.CYAN).reversed()),
-            text("[Enter] Confirm  [Esc] Cancel").dim()
+                text(prompt),
+                textInput(manager.inputState()).cursorStyle(dev.tamboui.style.Style.EMPTY.fg(Color.CYAN).reversed()),
+                text("[Enter] Confirm  [Esc] Cancel").dim()
         ).rounded()
-         .borderColor(Color.CYAN)
-         .width(Math.max(50, prompt.length() + 4))
-         .onConfirm(onConfirm)
-         .onCancel(manager::dismissDialog);
+                .borderColor(Color.CYAN)
+                .width(Math.max(50, prompt.length() + 4))
+                .onConfirm(onConfirm)
+                .onCancel(manager::dismissDialog);
     }
 
     @Override
@@ -130,16 +130,16 @@ public class FileManagerView implements Element {
 
     private Element header() {
         return row(
-            text(" File Manager ").bold().cyan(),
-            spacer(),
-            text(" [Tab] Switch ").dim(),
-            text(" [Space] Mark ").dim(),
-            text(" [F5] Copy ").dim(),
-            text(" [F6] Move ").dim(),
-            text(" [F7] Mkdir ").dim(),
-            text(" [F8] Delete ").dim(),
-            text(" [o] Goto ").dim(),
-            text(" [q] Quit ").dim()
+                text(" File Manager ").bold().cyan(),
+                spacer(),
+                text(" [Tab] Switch ").dim(),
+                text(" [Space] Mark ").dim(),
+                text(" [F5] Copy ").dim(),
+                text(" [F6] Move ").dim(),
+                text(" [F7] Mkdir ").dim(),
+                text(" [F8] Delete ").dim(),
+                text(" [o] Goto ").dim(),
+                text(" [q] Quit ").dim()
         ).length(1);
     }
 
@@ -148,27 +148,41 @@ public class FileManagerView implements Element {
         var rightActive = manager.isActive(FileManagerController.Side.RIGHT);
 
         return row(
-            browserPanel(manager.leftBrowser(), leftActive, "left", context),
-            browserPanel(manager.rightBrowser(), rightActive, "right", context)
+                browserPanel(manager.leftBrowser(), leftActive, "left", context),
+                browserPanel(manager.rightBrowser(), rightActive, "right", context)
         ).fill();
     }
 
     private Element browserPanel(DirectoryBrowserController browser, boolean active, String id, RenderContext context) {
-        return panel(browser.currentDirectory().toString(),
-            fileList(browser, active)
-        )
-        .id(id)
-        .rounded()
-        .titleEllipsisStart()
-        .borderColor(active ? Color.CYAN : Color.DARK_GRAY)
-        .fill();
+        // Create a wrapper element that sets visible rows based on actual available height
+        Element fileListWrapper = new Element() {
+            @Override
+            public void render(Frame frame, Rect area, RenderContext ctx) {
+                // Update visible rows based on actual available height
+                browser.setVisibleRows(area.height());
+                // Now render the file list with correct visible count
+                fileList(browser, active).render(frame, area, ctx);
+            }
+
+            @Override
+            public Constraint constraint() {
+                return Constraint.fill();
+            }
+        };
+
+        return panel(browser.currentDirectory().toString(), fileListWrapper)
+                .id(id)
+                .rounded()
+                .titleEllipsisStart()
+                .borderColor(active ? Color.CYAN : Color.DARK_GRAY)
+                .fill();
     }
 
     private Element fileList(DirectoryBrowserController browser, boolean active) {
         var entries = browser.entries();
         var offset = browser.scrollOffset();
         var cursor = browser.cursorIndex();
-        var visibleCount = Math.min(20, Math.max(0, entries.size() - offset));
+        var visibleCount = Math.min(browser.visibleRows(), Math.max(0, entries.size() - offset));
 
         if (visibleCount == 0) {
             return text("Empty").dim().fill();
@@ -205,9 +219,9 @@ public class FileManagerView implements Element {
             bg = Color.rgb(60, 60, 60);
         } else {
             fg = isMarked ? Color.YELLOW
-                : entry.name().equals("..") ? Color.BLUE
-                : entry.isDirectory() ? Color.CYAN
-                : Color.WHITE;
+                    : entry.name().equals("..") ? Color.BLUE
+                    : entry.isDirectory() ? Color.CYAN
+                    : Color.WHITE;
             bg = null;
         }
 
@@ -234,8 +248,8 @@ public class FileManagerView implements Element {
         }
 
         return row(
-            text(info).fill(),
-            text("[Enter] Open  [Backspace] Up  [+] Mark All  [-] Unmark").dim()
+                text(info).fill(),
+                text("[Enter] Open  [Backspace] Up  [+] Mark All  [-] Unmark").dim()
         ).length(1);
     }
 

@@ -13,6 +13,7 @@ import dev.tamboui.text.Span;
 import dev.tamboui.text.Text;
 import dev.tamboui.widgets.Widget;
 import dev.tamboui.widgets.block.Block;
+import dev.tamboui.widgets.util.Overflow;
 
 import java.util.ArrayList;
 import java.util.Collections;

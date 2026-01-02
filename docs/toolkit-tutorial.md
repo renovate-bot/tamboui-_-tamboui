@@ -37,7 +37,7 @@ import dev.tamboui.toolkit.event.EventResult;
 import dev.tamboui.tui.Keys;
 import dev.tamboui.tui.event.KeyCode;
 import dev.tamboui.tui.event.KeyEvent;
-import dev.tamboui.widgets.paragraph.Overflow;  // For text overflow handling
+import dev.tamboui.widgets.util.Overflow;
 
 import static dev.tamboui.toolkit.Toolkit.*;  // Factory methods
 ```
@@ -1470,11 +1470,23 @@ public class TodoApp {
 ### Running the Example
 
 ```bash
-# If using JBang
+# If using JBang, add the following at the top of TodoApp.java:
+
+///usr/bin/env jbang "$0" "$@" ; exit $?
+//DEPS dev.tamboui:tamboui-toolkit:LATEST
+//DEPS dev.tamboui:tamboui-jline:LATEST
+
+Then run with:
 jbang TodoApp.java
 
-# Or with Gradle/Maven after adding dependencies
-./gradlew run
+# If with Gradle, the `run` command will not support running a CLI application directly.
+# The easiest is to create a distribution and install it:
+./gradlew installDist
+
+Then run the installed application:
+build/install/todo-app/bin/todo-app
+
+# TODO: Maven instructions (depends on the project setup)
 ```
 
 ---

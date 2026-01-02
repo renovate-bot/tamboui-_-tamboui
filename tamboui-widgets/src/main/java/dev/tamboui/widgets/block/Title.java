@@ -7,7 +7,7 @@ package dev.tamboui.widgets.block;
 import dev.tamboui.layout.Alignment;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
-import dev.tamboui.widgets.paragraph.Overflow;
+import dev.tamboui.widgets.util.Overflow;
 
 /**
  * A title for a block, with optional alignment and overflow handling.
