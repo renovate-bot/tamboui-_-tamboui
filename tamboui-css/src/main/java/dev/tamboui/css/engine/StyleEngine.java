@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /**
  * Main entry point for CSS styling.
@@ -100,9 +101,15 @@ public final class StyleEngine {
      * @throws IOException if the resource cannot be read
      */
     public void loadStylesheet(String name, String classpathResource) throws IOException {
-        String css = readClasspathResource(classpathResource);
-        Stylesheet stylesheet = CssParser.parse(css);
-        namedStylesheets.put(name, new StylesheetEntry(stylesheet, classpathResource, null));
+        Supplier<String> source = () -> {
+            try {
+                return readClasspathResource(classpathResource);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
+        Stylesheet stylesheet = CssParser.parse(source.get());
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, source));
 
         // Auto-activate first loaded stylesheet
         if (activeStylesheetName == null) {
@@ -130,9 +137,15 @@ public final class StyleEngine {
      * @throws IOException if the file cannot be read
      */
     public void loadStylesheet(String name, Path path) throws IOException {
-        String css = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-        Stylesheet stylesheet = CssParser.parse(css);
-        namedStylesheets.put(name, new StylesheetEntry(stylesheet, null, path));
+        Supplier<String> source = () -> {
+            try {
+                return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
+        Stylesheet stylesheet = CssParser.parse(source.get());
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, source));
 
         if (activeStylesheetName == null) {
             activeStylesheetName = name;
@@ -157,7 +170,7 @@ public final class StyleEngine {
      */
     public void addStylesheet(String name, String css) {
         Stylesheet stylesheet = CssParser.parse(css);
-        namedStylesheets.put(name, new StylesheetEntry(stylesheet, null, null));
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, null));
 
         if (activeStylesheetName == null) {
             activeStylesheetName = name;
@@ -211,26 +224,21 @@ public final class StyleEngine {
      * Useful for hot-reload during development.
      *
      * @param name the stylesheet name
-     * @throws IOException if the stylesheet cannot be reloaded
      */
-    public void reloadStylesheet(String name) throws IOException {
+    public void reloadStylesheet(String name) {
         StylesheetEntry entry = namedStylesheets.get(name);
         if (entry == null) {
             throw new IllegalArgumentException("No stylesheet named: " + name);
         }
 
-        String css;
-        if (entry.classpathResource != null) {
-            css = readClasspathResource(entry.classpathResource);
-        } else if (entry.filePath != null) {
-            css = new String(Files.readAllBytes(entry.filePath), StandardCharsets.UTF_8);
-        } else {
+        Supplier<String> source = entry.sourceProvider();
+        if (source == null) {
             // Inline stylesheet - cannot reload
             return;
         }
 
-        Stylesheet stylesheet = CssParser.parse(css);
-        namedStylesheets.put(name, new StylesheetEntry(stylesheet, entry.classpathResource, entry.filePath));
+        Stylesheet stylesheet = CssParser.parse(source.get());
+        namedStylesheets.put(name, new StylesheetEntry(stylesheet, source));
 
         if (name.equals(activeStylesheetName)) {
             notifyListeners();
@@ -323,7 +331,7 @@ public final class StyleEngine {
         if (activeStylesheetName != null) {
             StylesheetEntry entry = namedStylesheets.get(activeStylesheetName);
             if (entry != null) {
-                rules.addAll(entry.stylesheet.rules());
+                rules.addAll(entry.stylesheet().rules());
             }
         }
 
@@ -342,7 +350,7 @@ public final class StyleEngine {
         if (activeStylesheetName != null) {
             StylesheetEntry entry = namedStylesheets.get(activeStylesheetName);
             if (entry != null) {
-                variables.putAll(entry.stylesheet.variables());
+                variables.putAll(entry.stylesheet().variables());
             }
         }
 
@@ -385,14 +393,24 @@ public final class StyleEngine {
      * Internal entry for named stylesheets.
      */
     private static final class StylesheetEntry {
-        final Stylesheet stylesheet;
-        final String classpathResource;
-        final Path filePath;
+        private final Stylesheet stylesheet;
+        private final Supplier<String> sourceProvider;
 
-        StylesheetEntry(Stylesheet stylesheet, String classpathResource, Path filePath) {
+        /**
+         * @param stylesheet the parsed stylesheet
+         * @param sourceProvider optional supplier that provides CSS content for reloading (null for inline stylesheets)
+         */
+        StylesheetEntry(Stylesheet stylesheet, Supplier<String> sourceProvider) {
             this.stylesheet = stylesheet;
-            this.classpathResource = classpathResource;
-            this.filePath = filePath;
+            this.sourceProvider = sourceProvider;
+        }
+
+        Stylesheet stylesheet() {
+            return stylesheet;
+        }
+
+        Supplier<String> sourceProvider() {
+            return sourceProvider;
         }
     }
 }
