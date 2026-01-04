@@ -14,6 +14,9 @@ import java.util.Objects;
  * A type selector that matches elements by their type name.
  * <p>
  * Example: {@code Panel { ... }} matches all Panel elements.
+ * <p>
+ * Type selectors also match subclasses. For example, if {@code MyPanel extends Panel},
+ * the selector {@code Panel { ... }} will match both Panel and MyPanel elements.
  */
 public final class TypeSelector implements Selector {
 
@@ -34,7 +37,7 @@ public final class TypeSelector implements Selector {
 
     @Override
     public boolean matches(Styleable element, PseudoClassState state, List<Styleable> ancestors) {
-        return typeName.equals(element.styleType());
+        return Styleable.styleTypesOf(element).contains(typeName);
     }
 
     @Override

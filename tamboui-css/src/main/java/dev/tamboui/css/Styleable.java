@@ -4,6 +4,9 @@
  */
 package dev.tamboui.css;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -56,4 +59,33 @@ public interface Styleable {
      * @return the parent element, or empty if this is a root element
      */
     Optional<Styleable> cssParent();
+
+    /**
+     * Builds the list of style types for an element, ordered by precedence.
+     * <p>
+     * The list contains the element's type and all parent types in the class
+     * hierarchy that implement {@link Styleable}. Types are ordered with lower
+     * precedence first (parent types) and higher precedence last (most specific type).
+     * <p>
+     * For example, if {@code MyPanel extends Panel} and both implement Styleable,
+     * calling {@code styleTypes(myPanel)} returns {@code ["Panel", "MyPanel"]}.
+     *
+     * @param element the element to get style types for
+     * @return an ordered list of style type names
+     */
+    static List<String> styleTypesOf(Styleable element) {
+        List<String> types = new ArrayList<>();
+
+        // Walk the superclass hierarchy for inherited types
+        Class<?> clazz = element.getClass().getSuperclass();
+        while (clazz != null && Styleable.class.isAssignableFrom(clazz)) {
+            types.add(0, clazz.getSimpleName());
+            clazz = clazz.getSuperclass();
+        }
+
+        // Add the element's declared type last (highest precedence)
+        types.add(element.styleType());
+
+        return Collections.unmodifiableList(types);
+    }
 }

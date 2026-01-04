@@ -31,6 +31,42 @@ class SelectorTest {
     }
 
     @Test
+    void typeSelectorMatchesSubclass() {
+        TypeSelector panelSelector = new TypeSelector("BasePanel");
+        MyPanel myPanel = new MyPanel();
+
+        // MyPanel extends BasePanel, so Panel selector should match MyPanel
+        assertThat(panelSelector.matches(myPanel, PseudoClassState.NONE, Collections.<Styleable>emptyList())).isTrue();
+    }
+
+    @Test
+    void typeSelectorMatchesExactTypeForSubclass() {
+        TypeSelector myPanelSelector = new TypeSelector("MyPanel");
+        MyPanel myPanel = new MyPanel();
+
+        // MyPanel selector should also match MyPanel
+        assertThat(myPanelSelector.matches(myPanel, PseudoClassState.NONE, Collections.<Styleable>emptyList())).isTrue();
+    }
+
+    @Test
+    void styleTypesReturnsCorrectOrder() {
+        MyPanel myPanel = new MyPanel();
+        List<String> types = Styleable.styleTypesOf(myPanel);
+
+        // Order should be parent first (lower precedence), child last (higher precedence)
+        assertThat(types).containsExactly("BasePanel", "MyPanel");
+    }
+
+    @Test
+    void styleTypesForSimpleElementReturnsOnlyOneType() {
+        Styleable element = createStyleable("Panel", null, Collections.<String>emptySet());
+        List<String> types = Styleable.styleTypesOf(element);
+
+        // TestStyleable has no Styleable parent classes
+        assertThat(types).containsExactly("Panel");
+    }
+
+    @Test
     void typeSelectorSpecificity() {
         TypeSelector selector = new TypeSelector("Panel");
         assertThat(selector.specificity()).isEqualTo(1);
@@ -278,5 +314,34 @@ class SelectorTest {
         public Optional<Styleable> cssParent() {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Base panel class for testing type hierarchy matching.
+     */
+    private static class BasePanel implements Styleable {
+        @Override
+        public Optional<String> cssId() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Set<String> cssClasses() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public Optional<Styleable> cssParent() {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Subclass of BasePanel for testing type hierarchy matching.
+     * CSS selectors for both "BasePanel" and "MyPanel" should match instances of this class.
+     */
+    private static class MyPanel extends BasePanel {
+        // Inherits all methods from BasePanel
+        // styleType() defaults to "MyPanel" (getClass().getSimpleName())
     }
 }
