@@ -1,0 +1,114 @@
+/* Dark Theme for CSS Demo */
+
+$bg-primary: black;
+$fg-primary: white;
+$accent: cyan;
+$border-color: dark-gray;
+$focus-color: cyan;
+$highlight-bg: #333333;
+
+/* Base styles */
+* {
+    color: $fg-primary;
+    background: $bg-primary;
+}
+
+/* Panel styling */
+Panel {
+    background: black;
+    border-color: $border-color;
+    border-type: rounded;
+}
+
+Panel:focus {
+    border-color: $focus-color;
+    border-type: double;
+    text-style: bold;
+}
+
+/* List styling */
+ListContainer {
+    background: $bg-primary;
+    border-color: $border-color;
+}
+
+ListContainer:focus {
+    border-color: $focus-color;
+}
+
+/* List item styles - using type-based sub-component naming */
+ListContainer-item {
+    color: $fg-primary;
+}
+
+ListContainer-item:selected {
+    background: $highlight-bg;
+    color: $accent;
+    text-style: bold;
+}
+
+/* Zebra striping for list items */
+ListContainer-item:nth-child(even) {
+    background: #229922;
+}
+
+ListContainer-item:nth-child(odd) {
+    background: #992299;
+}
+
+/* Header styling */
+.header {
+    color: $accent;
+    text-style: bold;
+    text-align: center;
+}
+
+/* Status bar */
+.status {
+    background: #333333;
+    color: white;
+    border-color: #666666;
+}
+
+/* Primary action elements */
+.primary {
+    color: cyan;
+    text-style: bold;
+}
+
+/* Secondary elements */
+.secondary {
+    color: dark-gray;
+}
+
+/* Warning text */
+.warning {
+    color: light-yellow;
+}
+
+/* Error text */
+.error {
+    color: light-red;
+    text-style: bold;
+}
+
+/* Success text */
+.success {
+    color: light-green;
+}
+
+/* Info text */
+.info {
+    color: light-cyan;
+}
+
+/* Dimmed text */
+.dim {
+    text-style: dim;
+}
+
+/* Theme indicator */
+#theme-indicator {
+    color: cyan;
+    text-style: bold;
+}

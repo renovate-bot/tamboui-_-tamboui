@@ -4,6 +4,7 @@
  */
 package dev.tamboui.toolkit.elements;
 
+import dev.tamboui.css.cascade.ResolvedStyle;
 import dev.tamboui.toolkit.element.Element;
 import dev.tamboui.toolkit.element.DefaultRenderContext;
 import dev.tamboui.toolkit.element.RenderContext;
@@ -19,12 +20,14 @@ import dev.tamboui.text.Span;
 import dev.tamboui.widgets.block.Block;
 import dev.tamboui.widgets.block.BorderType;
 import dev.tamboui.widgets.block.Borders;
+import dev.tamboui.widgets.block.Padding;
 import dev.tamboui.widgets.block.Title;
 import dev.tamboui.widgets.text.Overflow;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A container element with borders and title.
@@ -38,6 +41,7 @@ public final class Panel extends StyledElement<Panel> {
     private BorderType borderType = BorderType.PLAIN;
     private Color borderColor;
     private Color focusedBorderColor;
+    private Padding padding;
     private final List<Element> children = new ArrayList<>();
     private boolean focusable;
 
@@ -142,6 +146,22 @@ public final class Panel extends StyledElement<Panel> {
     }
 
     /**
+     * Sets uniform padding inside the panel.
+     */
+    public Panel padding(int value) {
+        this.padding = Padding.uniform(value);
+        return this;
+    }
+
+    /**
+     * Sets the padding inside the panel.
+     */
+    public Panel padding(Padding padding) {
+        this.padding = padding;
+        return this;
+    }
+
+    /**
      * Makes this panel focusable.
      */
     public Panel focusable() {
@@ -179,25 +199,50 @@ public final class Panel extends StyledElement<Panel> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
-        if (area.isEmpty()) {
-            return;
-        }
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
+        // Get current style from context (already resolved by StyledElement.render)
+        Style effectiveStyle = context.currentStyle();
 
-        // Track rendered area for event routing
-        setRenderedArea(area);
-
-        // Determine border color based on focus
+        // Determine border color: focus color > programmatic color > CSS color
         boolean isFocused = elementId != null && context.isFocused(elementId);
         Color effectiveBorderColor = isFocused && focusedBorderColor != null
             ? focusedBorderColor
             : borderColor;
 
+        // Get CSS style for additional properties
+        Optional<ResolvedStyle> cssStyle = context.resolveStyle(this);
+
+        // If no programmatic border color set, try to get from CSS
+        if (effectiveBorderColor == null) {
+            effectiveBorderColor = cssStyle
+                .flatMap(resolved -> resolved.getProperty("border-color"))
+                .flatMap(context::parseColor)
+                .orElse(null);
+        }
+
+        // Get padding: programmatic > CSS > none
+        Padding effectivePadding = this.padding;
+        if (effectivePadding == null) {
+            effectivePadding = cssStyle
+                .flatMap(ResolvedStyle::padding)
+                .orElse(Padding.NONE);
+        }
+
+        // Get border type: programmatic > CSS > default (PLAIN)
+        BorderType effectiveBorderType = this.borderType;
+        if (effectiveBorderType == BorderType.PLAIN) {
+            // Only check CSS if using default value
+            effectiveBorderType = cssStyle
+                .flatMap(ResolvedStyle::borderType)
+                .orElse(BorderType.PLAIN);
+        }
+
         // Build the block
         Block.Builder blockBuilder = Block.builder()
             .borders(Borders.ALL)
-            .borderType(borderType)
-            .style(style);
+            .borderType(effectiveBorderType)
+            .padding(effectivePadding)
+            .style(effectiveStyle);
 
         if (effectiveBorderColor != null) {
             blockBuilder.borderStyle(Style.EMPTY.fg(effectiveBorderColor));

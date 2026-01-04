@@ -122,14 +122,14 @@ public final class LineGaugeElement extends StyledElement<LineGaugeElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
 
         LineGauge.Builder builder = LineGauge.builder()
             .ratio(ratio)
-            .style(style)
+            .style(context.currentStyle())
             .filledStyle(filledStyle)
             .unfilledStyle(unfilledStyle)
             .lineSet(lineSet);

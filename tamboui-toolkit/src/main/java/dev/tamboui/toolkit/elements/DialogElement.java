@@ -222,7 +222,7 @@ public final class DialogElement extends StyledElement<DialogElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
@@ -247,7 +247,7 @@ public final class DialogElement extends StyledElement<DialogElement> {
         Block.Builder blockBuilder = Block.builder()
             .borders(Borders.ALL)
             .borderType(borderType)
-            .style(style);
+            .style(context.currentStyle());
 
         if (borderColor != null) {
             blockBuilder.borderStyle(Style.EMPTY.fg(borderColor));

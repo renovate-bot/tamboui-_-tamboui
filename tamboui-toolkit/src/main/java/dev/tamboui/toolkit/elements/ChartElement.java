@@ -144,7 +144,7 @@ public final class ChartElement extends StyledElement<ChartElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
@@ -153,7 +153,7 @@ public final class ChartElement extends StyledElement<ChartElement> {
             .datasets(datasets)
             .xAxis(xAxis)
             .yAxis(yAxis)
-            .style(style);
+            .style(context.currentStyle());
 
         if (legendPosition != null) {
             builder.legendPosition(legendPosition);

@@ -11,6 +11,7 @@ import dev.tamboui.toolkit.element.StyledElement;
 import dev.tamboui.layout.Constraint;
 import dev.tamboui.layout.Layout;
 import dev.tamboui.layout.Rect;
+import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Frame;
 
 import java.util.ArrayList;
@@ -57,13 +58,16 @@ public final class Column extends StyledElement<Column> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
-        if (area.isEmpty() || children.isEmpty()) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
+        if (children.isEmpty()) {
             return;
         }
 
-        // Track rendered area for event routing
-        setRenderedArea(area);
+        // Fill background with current style
+        Style effectiveStyle = context.currentStyle();
+        if (effectiveStyle.bg().isPresent()) {
+            frame.buffer().setStyle(area, effectiveStyle);
+        }
 
         // Build constraints, accounting for spacing
         List<Constraint> constraints = new ArrayList<>();

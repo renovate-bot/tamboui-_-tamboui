@@ -4,6 +4,7 @@
  */
 package dev.tamboui.toolkit.app;
 
+import dev.tamboui.css.engine.StyleEngine;
 import dev.tamboui.toolkit.component.ComponentTree;
 import dev.tamboui.toolkit.element.DefaultRenderContext;
 import dev.tamboui.toolkit.element.Element;
@@ -92,7 +93,7 @@ public final class ToolkitRunner implements AutoCloseable {
      * The supplier is called each frame to get the current UI state.
      * <p>
      * Events are routed to elements based on their handlers.
-     * Press 'q' or Ctrl+C to quit.
+     * Press 'q' or Ctrl+C to quit (when no element consumes the event).
      *
      * @param elementSupplier provides the root element for each render
      * @throws Exception if an error occurs during execution
@@ -167,6 +168,19 @@ public final class ToolkitRunner implements AutoCloseable {
      */
     public EventRouter eventRouter() {
         return eventRouter;
+    }
+
+    /**
+     * Sets the style engine for CSS styling.
+     * <p>
+     * When set, elements will have their CSS styles resolved during rendering.
+     *
+     * @param styleEngine the style engine to use, or null to disable CSS styling
+     * @return this runner for chaining
+     */
+    public ToolkitRunner styleEngine(StyleEngine styleEngine) {
+        renderContext.setStyleEngine(styleEngine);
+        return this;
     }
 
     /**

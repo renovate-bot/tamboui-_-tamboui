@@ -7,6 +7,7 @@ package dev.tamboui.widgets.chart;
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Style;
+import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.widgets.Widget;
 import dev.tamboui.widgets.block.Block;
@@ -418,7 +419,7 @@ public final class Chart implements Widget {
             Dataset ds = namedDatasets.get(i);
             int y = legendY + i;
             if (y >= graphArea.y() && y < graphArea.bottom()) {
-                String entry = ds.marker().symbol() + " " + ds.name().map(n -> n.rawContent()).orElse("");
+                String entry = ds.marker().symbol() + " " + ds.name().map(Line::rawContent).orElse("");
                 buffer.setString(legendX, y, entry, ds.style());
             }
         }

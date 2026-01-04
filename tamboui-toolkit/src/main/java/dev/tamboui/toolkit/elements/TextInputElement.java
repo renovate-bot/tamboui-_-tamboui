@@ -147,13 +147,13 @@ public final class TextInputElement extends StyledElement<TextInputElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
 
         TextInput.Builder builder = TextInput.builder()
-            .style(style)
+            .style(context.currentStyle())
             .cursorStyle(cursorStyle)
             .placeholder(placeholder)
             .placeholderStyle(placeholderStyle);

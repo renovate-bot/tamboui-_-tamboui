@@ -14,7 +14,7 @@ import dev.tamboui.toolkit.elements.DialogElement;
 import dev.tamboui.toolkit.elements.GaugeElement;
 import dev.tamboui.toolkit.elements.LazyElement;
 import dev.tamboui.toolkit.elements.LineGaugeElement;
-import dev.tamboui.toolkit.elements.ListElement;
+import dev.tamboui.toolkit.elements.ListContainer;
 import dev.tamboui.toolkit.elements.Panel;
 import dev.tamboui.toolkit.elements.Row;
 import dev.tamboui.toolkit.elements.ScrollbarElement;
@@ -23,8 +23,10 @@ import dev.tamboui.toolkit.elements.SparklineElement;
 import dev.tamboui.toolkit.elements.TableElement;
 import dev.tamboui.toolkit.elements.TabsElement;
 import dev.tamboui.toolkit.elements.TextElement;
+import dev.tamboui.toolkit.elements.TextAreaElement;
 import dev.tamboui.toolkit.elements.TextInputElement;
 import dev.tamboui.layout.Constraint;
+import dev.tamboui.widgets.input.TextAreaState;
 import dev.tamboui.widgets.input.TextInputState;
 import dev.tamboui.widgets.scrollbar.ScrollbarState;
 import dev.tamboui.tui.event.KeyCode;
@@ -464,27 +466,27 @@ public final class Toolkit {
      * @param items the list items
      * @return a new list element
      */
-    public static ListElement<?> list(String... items) {
-        return new ListElement<>(items);
+    public static ListContainer<?> list(String... items) {
+        return new ListContainer<>(items);
     }
 
     /**
      * Creates a list with the given items.
      *
      * @param items the list items
-     * @return a new list element
+     * @return a new list container
      */
-    public static ListElement<?> list(List<String> items) {
-        return new ListElement<>(items);
+    public static ListContainer<?> list(List<String> items) {
+        return new ListContainer<>(items);
     }
 
     /**
      * Creates an empty list.
      *
-     * @return a new empty list element
+     * @return a new empty list container
      */
-    public static ListElement<?> list() {
-        return new ListElement<>();
+    public static ListContainer<?> list() {
+        return new ListContainer<>();
     }
 
     // ==================== Table ====================
@@ -548,6 +550,27 @@ public final class Toolkit {
      */
     public static TextInputElement textInput() {
         return new TextInputElement();
+    }
+
+    // ==================== Text Area ====================
+
+    /**
+     * Creates a text area with the given state.
+     *
+     * @param state the text area state
+     * @return a new text area element
+     */
+    public static TextAreaElement textArea(TextAreaState state) {
+        return new TextAreaElement(state);
+    }
+
+    /**
+     * Creates a text area with a new state.
+     *
+     * @return a new text area element
+     */
+    public static TextAreaElement textArea() {
+        return new TextAreaElement();
     }
 
     // ==================== Bar Chart ====================

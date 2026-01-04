@@ -170,35 +170,38 @@ public final class Block implements Widget {
         }
     }
     
-    private void setBorderCell(Buffer buffer, int x, int y, String symbol, Style style) {
+    private void setBorderCell(Buffer buffer, int x, int y, String symbol, Style borderStyle) {
+        Cell existing = buffer.get(x, y);
+        // Merge borderStyle with existing style to preserve background from buffer.setStyle()
+        Style mergedStyle = existing.style().patch(borderStyle);
+
         if (mergeStrategy != MergeStrategy.REPLACE) {
-            Cell existing = buffer.get(x, y);
             String existingSymbol = existing.symbol();
             boolean existingIsText = !MergeStrategy.isBorderSymbol(existingSymbol);
             boolean newIsBorder = MergeStrategy.isBorderSymbol(symbol);
-            
+
             // If existing cell is empty (space), just set the new cell
             if (" ".equals(existingSymbol)) {
-                buffer.set(x, y, new Cell(symbol, style));
+                buffer.set(x, y, new Cell(symbol, mergedStyle));
                 return;
             }
-            
+
             // Check if existing cell contains non-border text (like titles)
             // If we're trying to draw a border over non-border text, preserve the text but update style
             if (existingIsText && newIsBorder) {
                 // Preserve existing non-border text (like titles) when drawing borders
                 // But update the style to match the new cell's style
-                buffer.set(x, y, new Cell(existing.symbol(), style));
+                buffer.set(x, y, new Cell(existing.symbol(), mergedStyle));
                 return;
             }
-            
+
             // Both are borders (or existing is a border) - merge the symbols
             Cell merged = existing.mergeSymbol(symbol, mergeStrategy);
-            // Use the new cell's style (last rendered takes precedence for style)
-            buffer.set(x, y, new Cell(merged.symbol(), style));
+            // Use the merged style (preserves background, applies border foreground)
+            buffer.set(x, y, new Cell(merged.symbol(), mergedStyle));
         } else {
-            // REPLACE strategy - just set the cell directly
-            buffer.set(x, y, new Cell(symbol, style));
+            // REPLACE strategy - set the cell with merged style
+            buffer.set(x, y, new Cell(symbol, mergedStyle));
         }
     }
 
@@ -246,7 +249,11 @@ public final class Block implements Widget {
                 break;
         }
 
-        // Apply borderStyle to title if it's set (non-empty)
+        // Apply block style (for background) then borderStyle (for foreground)
+        // This ensures title inherits background from block and foreground from border
+        if (!style.equals(Style.EMPTY)) {
+            titleLine = titleLine.patchStyle(style);
+        }
         if (!borderStyle.equals(Style.EMPTY)) {
             titleLine = titleLine.patchStyle(borderStyle);
         }

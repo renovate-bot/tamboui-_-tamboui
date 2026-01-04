@@ -1,0 +1,115 @@
+/* Light Theme for CSS Demo */
+
+$bg-primary: #eeeeee;
+$fg-primary: #1a1a1a;
+$accent: #0066cc;
+$border-color: #888888;
+$focus-color: #0066cc;
+$highlight-bg: #d0d0d0;
+
+/* Base styles */
+* {
+    color: $fg-primary;
+    background: $bg-primary;
+}
+
+/* Panel styling */
+Panel {
+    background: $bg-primary;
+    border-color: $border-color;
+    border-type: rounded;
+}
+
+Panel:focus {
+    border-color: $focus-color;
+    border-type: double;
+    text-style: bold;
+}
+
+/* List styling */
+ListContainer {
+    background: $bg-primary;
+    border-color: $border-color;
+}
+
+ListContainer:focus {
+    border-color: $focus-color;
+}
+
+/* List item styles - using type-based sub-component naming */
+ListContainer-item {
+    color: $fg-primary;
+}
+
+ListContainer-item:selected {
+    background: $highlight-bg;
+    color: $accent;
+    text-style: bold;
+}
+
+/* Zebra striping for list items */
+ListContainer-item:nth-child(even) {
+    background: #88cc88;
+}
+
+ListContainer-item:nth-child(odd) {
+    background: #cc88cc;
+}
+
+/* Header styling */
+.header {
+    color: $accent;
+    text-style: bold;
+    text-align: center;
+}
+
+/* Status bar */
+.status {
+    background: #c8c8c8;
+    color: #1a1a1a;
+    border-color: #888888;
+}
+
+/* Primary action elements */
+.primary {
+    color: #0055aa;
+    text-style: bold;
+}
+
+/* Secondary elements */
+.secondary {
+    color: #555555;
+}
+
+/* Warning text */
+.warning {
+    color: #996600;
+    text-style: bold;
+}
+
+/* Error text */
+.error {
+    color: #cc0000;
+    text-style: bold;
+}
+
+/* Success text */
+.success {
+    color: #007700;
+}
+
+/* Info text */
+.info {
+    color: #006688;
+}
+
+/* Dimmed text */
+.dim {
+    color: #666666;
+}
+
+/* Theme indicator */
+#theme-indicator {
+    color: #0066cc;
+    text-style: bold;
+}

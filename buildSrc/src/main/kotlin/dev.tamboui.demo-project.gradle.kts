@@ -16,11 +16,18 @@ tasks.withType<JavaExec>().configureEach {
     enabled = false
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.release = 21
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+application {
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
+}
 
 graalvmNative {
     binaries {
@@ -38,6 +45,11 @@ graalvmNative {
                 "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                 "--add-opens", "java.base/java.io=ALL-UNNAMED"
             )
+            resources {
+                autodetection {
+                    enabled = true
+                }
+            }
         }
     }
 

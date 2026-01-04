@@ -121,15 +121,23 @@ public final class GaugeElement extends StyledElement<GaugeElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
 
+        Style effectiveStyle = context.currentStyle();
+
+        // Use gaugeStyle if explicitly set, otherwise use the foreground color from CSS
+        Style effectiveGaugeStyle = gaugeStyle;
+        if (effectiveGaugeStyle.equals(Style.EMPTY) && effectiveStyle.fg().isPresent()) {
+            effectiveGaugeStyle = Style.EMPTY.fg(effectiveStyle.fg().get());
+        }
+
         Gauge.Builder builder = Gauge.builder()
             .ratio(ratio)
-            .gaugeStyle(gaugeStyle)
-            .style(style)
+            .gaugeStyle(effectiveGaugeStyle)
+            .style(effectiveStyle)
             .useUnicode(useUnicode);
 
         if (label != null) {

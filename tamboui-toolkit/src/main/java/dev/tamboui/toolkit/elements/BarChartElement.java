@@ -236,7 +236,7 @@ public final class BarChartElement extends StyledElement<BarChartElement> {
     }
 
     @Override
-    public void render(Frame frame, Rect area, RenderContext context) {
+    protected void renderContent(Frame frame, Rect area, RenderContext context) {
         if (area.isEmpty()) {
             return;
         }
@@ -248,7 +248,7 @@ public final class BarChartElement extends StyledElement<BarChartElement> {
             .groupGap(groupGap)
             .direction(direction)
             .barSet(barSet)
-            .style(style);
+            .style(context.currentStyle());
 
         if (max != null) {
             builder.max(max);
