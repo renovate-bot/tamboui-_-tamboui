@@ -7,7 +7,9 @@ val modules = listOf(
     "tamboui-jline",
     "tamboui-tui",
     "tamboui-picocli",
-    "tamboui-toolkit"
+    "tamboui-toolkit",
+    "tamboui-annotations",
+    "tamboui-processor"
 )
 
 include(*modules.toTypedArray())
