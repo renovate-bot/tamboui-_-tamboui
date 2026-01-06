@@ -9,7 +9,7 @@ import dev.tamboui.toolkit.element.StyledElement;
 import dev.tamboui.layout.Alignment;
 import dev.tamboui.layout.Constraint;
 import dev.tamboui.layout.Rect;
-import dev.tamboui.style.PropertyResolver;
+import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.text.Line;
@@ -182,9 +182,9 @@ public final class TextElement extends StyledElement<TextElement> {
         Style effectiveStyle = context.currentStyle();
 
         // Get the CSS resolver for this element
-        PropertyResolver resolver = context.resolveStyle(this)
-                .map(r -> (PropertyResolver) r)
-                .orElse(PropertyResolver.empty());
+        StylePropertyResolver resolver = context.resolveStyle(this)
+                .map(r -> (StylePropertyResolver) r)
+                .orElse(StylePropertyResolver.empty());
 
         // Build paragraph - CSS properties are resolved by the widget
         Paragraph.Builder paragraphBuilder = Paragraph.builder()

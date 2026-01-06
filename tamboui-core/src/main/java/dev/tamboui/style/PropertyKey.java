@@ -16,7 +16,7 @@ import java.util.Optional;
  *     PropertyKey.of("border-color", ColorConverter.INSTANCE);
  * }</pre>
  * <p>
- * They can then be used with {@link PropertyResolver} to retrieve typed values:
+ * They can then be used with {@link StylePropertyResolver} to retrieve typed values:
  * <pre>{@code
  * Color color = resolver.get(BORDER_COLOR).orElse(Color.WHITE);
  * }</pre>

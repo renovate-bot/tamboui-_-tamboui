@@ -23,7 +23,7 @@ import java.util.Optional;
  * }</pre>
  */
 @FunctionalInterface
-public interface PropertyResolver {
+public interface StylePropertyResolver {
 
     /**
      * Retrieves the value for the given property key.
@@ -41,19 +41,19 @@ public interface PropertyResolver {
      *
      * @return an empty property resolver
      */
-    static PropertyResolver empty() {
-        return EmptyPropertyResolver.INSTANCE;
+    static StylePropertyResolver empty() {
+        return EmptyStylePropertyResolver.INSTANCE;
     }
 }
 
 /**
  * Singleton empty resolver implementation.
  */
-final class EmptyPropertyResolver implements PropertyResolver {
+final class EmptyStylePropertyResolver implements StylePropertyResolver {
 
-    static final EmptyPropertyResolver INSTANCE = new EmptyPropertyResolver();
+    static final EmptyStylePropertyResolver INSTANCE = new EmptyStylePropertyResolver();
 
-    private EmptyPropertyResolver() {
+    private EmptyStylePropertyResolver() {
     }
 
     @Override

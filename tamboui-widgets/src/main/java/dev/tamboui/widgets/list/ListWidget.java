@@ -14,7 +14,7 @@ import java.util.function.BiFunction;
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
-import dev.tamboui.style.PropertyResolver;
+import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardPropertyKeys;
 import dev.tamboui.style.Style;
 import dev.tamboui.style.StyledProperty;
@@ -277,7 +277,7 @@ public final class ListWidget implements StatefulWidget<ListState> {
         private Line highlightSymbol = Line.from(">> ");
         private ListDirection direction = ListDirection.TOP_TO_BOTTOM;
         private boolean repeatHighlightSymbol = false;
-        private PropertyResolver styleResolver = PropertyResolver.empty();
+        private StylePropertyResolver styleResolver = StylePropertyResolver.empty();
         private BiFunction<Integer, Integer, Style> itemStyleResolver;
 
         // Style-aware properties bound to this builder's resolver
@@ -347,8 +347,8 @@ public final class ListWidget implements StatefulWidget<ListState> {
          * @param resolver the property resolver
          * @return this builder
          */
-        public Builder styleResolver(PropertyResolver resolver) {
-            this.styleResolver = resolver != null ? resolver : PropertyResolver.empty();
+        public Builder styleResolver(StylePropertyResolver resolver) {
+            this.styleResolver = resolver != null ? resolver : StylePropertyResolver.empty();
             return this;
         }
 

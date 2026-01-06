@@ -8,7 +8,7 @@ import dev.tamboui.layout.Alignment;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.PropertyKey;
-import dev.tamboui.style.PropertyResolver;
+import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.Style;
 import dev.tamboui.style.Width;
 import dev.tamboui.widgets.block.BorderType;
@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * Represents the computed style for an element after CSS cascade resolution.
  * <p>
- * Implements {@link PropertyResolver} to allow typed property access using
+ * Implements {@link StylePropertyResolver} to allow typed property access using
  * {@link PropertyKey}s. Properties can be retrieved either through the legacy
  * typed getters (e.g., {@link #foreground()}) or through the generic
  * {@link #get(PropertyKey)} method.
@@ -35,7 +35,7 @@ import java.util.Set;
  * Color borderColor = style.get(StandardPropertyKeys.BORDER_COLOR).orElse(Color.WHITE);
  * }</pre>
  */
-public final class CssStyleResolver implements PropertyResolver {
+public final class CssStyleResolver implements StylePropertyResolver {
 
     private final Color foreground;
     private final Color background;

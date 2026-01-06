@@ -9,7 +9,7 @@ import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.ColorConverter;
 import dev.tamboui.style.PropertyKey;
-import dev.tamboui.style.PropertyResolver;
+import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.Style;
 import dev.tamboui.style.StyledProperty;
 import dev.tamboui.widget.StatefulWidget;
@@ -423,7 +423,7 @@ public final class Scrollbar implements StatefulWidget<ScrollbarState> {
         private Style trackStyle;
         private Style beginStyle;
         private Style endStyle;
-        private PropertyResolver styleResolver = PropertyResolver.empty();
+        private StylePropertyResolver styleResolver = StylePropertyResolver.empty();
 
         // Style-aware properties bound to this builder's resolver
         private final StyledProperty<Color> thumbColor =
@@ -542,8 +542,8 @@ public final class Scrollbar implements StatefulWidget<ScrollbarState> {
          * @param resolver the property resolver
          * @return this builder
          */
-        public Builder styleResolver(PropertyResolver resolver) {
-            this.styleResolver = resolver != null ? resolver : PropertyResolver.empty();
+        public Builder styleResolver(StylePropertyResolver resolver) {
+            this.styleResolver = resolver != null ? resolver : StylePropertyResolver.empty();
             return this;
         }
 

@@ -49,10 +49,10 @@ public final class StyledProperty<T> {
 
     private final PropertyKey<T> key;
     private final T defaultValue;
-    private final Supplier<PropertyResolver> resolverSupplier;
+    private final Supplier<StylePropertyResolver> resolverSupplier;
     private T value;
 
-    private StyledProperty(PropertyKey<T> key, T defaultValue, Supplier<PropertyResolver> resolverSupplier) {
+    private StyledProperty(PropertyKey<T> key, T defaultValue, Supplier<StylePropertyResolver> resolverSupplier) {
         this.key = Objects.requireNonNull(key, "key must not be null");
         this.defaultValue = defaultValue;
         this.resolverSupplier = resolverSupplier;
@@ -100,7 +100,7 @@ public final class StyledProperty<T> {
      * @return the styled property
      */
     public static <T> StyledProperty<T> of(PropertyKey<T> key, T defaultValue,
-                                           Supplier<PropertyResolver> resolverSupplier) {
+                                           Supplier<StylePropertyResolver> resolverSupplier) {
         return new StyledProperty<>(key, defaultValue, resolverSupplier);
     }
 
@@ -155,7 +155,7 @@ public final class StyledProperty<T> {
      * @param resolver the property resolver to use for resolution
      * @return the resolved value, or null if no value is available
      */
-    public T resolve(PropertyResolver resolver) {
+    public T resolve(StylePropertyResolver resolver) {
         if (value != null) {
             return value;
         }
@@ -175,9 +175,9 @@ public final class StyledProperty<T> {
         if (value != null) {
             return value;
         }
-        PropertyResolver resolver = resolverSupplier != null
+        StylePropertyResolver resolver = resolverSupplier != null
                 ? resolverSupplier.get()
-                : PropertyResolver.empty();
+                : StylePropertyResolver.empty();
         return resolver.get(key).orElse(defaultValue);
     }
 }

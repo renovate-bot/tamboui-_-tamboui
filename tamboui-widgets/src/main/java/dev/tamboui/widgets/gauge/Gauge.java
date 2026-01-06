@@ -10,7 +10,7 @@ import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.ColorConverter;
 import dev.tamboui.style.PropertyKey;
-import dev.tamboui.style.PropertyResolver;
+import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardPropertyKeys;
 import dev.tamboui.style.Style;
 import dev.tamboui.style.StyledProperty;
@@ -193,7 +193,7 @@ public final class Gauge implements Widget {
         private Style style = Style.EMPTY;
         private Style gaugeStyle = Style.EMPTY;
         private boolean useUnicode = true;
-        private PropertyResolver styleResolver = PropertyResolver.empty();
+        private StylePropertyResolver styleResolver = StylePropertyResolver.empty();
 
         // Style-aware properties bound to this builder's resolver
         private final StyledProperty<Color> background =
@@ -296,8 +296,8 @@ public final class Gauge implements Widget {
          * @param resolver the property resolver
          * @return this builder
          */
-        public Builder styleResolver(PropertyResolver resolver) {
-            this.styleResolver = resolver != null ? resolver : PropertyResolver.empty();
+        public Builder styleResolver(StylePropertyResolver resolver) {
+            this.styleResolver = resolver != null ? resolver : StylePropertyResolver.empty();
             return this;
         }
 
