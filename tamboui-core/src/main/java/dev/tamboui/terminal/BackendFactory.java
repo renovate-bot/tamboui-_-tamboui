@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Spliterator;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Factory for creating {@link Backend} instances using the {@link ServiceLoader} mechanism.
@@ -53,57 +55,39 @@ public final class BackendFactory {
      */
     public static Backend create() throws IOException {
         // Check system property first, then environment variable
-        String providerSpec = System.getProperty("tamboui.backend");
-        if (providerSpec == null || providerSpec.isEmpty()) {
-            providerSpec = System.getenv("TAMBOUI_BACKEND");
+        String userSelectedProvider = System.getProperty("tamboui.backend");
+        if (userSelectedProvider == null || userSelectedProvider.isEmpty()) {
+            userSelectedProvider = System.getenv("TAMBOUI_BACKEND");
         }
-
-        // If provider spec contains a dot, it's likely a class name - try loading it directly
-        if (providerSpec != null && !providerSpec.isEmpty() && providerSpec.contains(".")) {
-            try {
-                Class<?> clazz = Class.forName(providerSpec);
-                if (!BackendProvider.class.isAssignableFrom(clazz)) {
-                    throw new IllegalStateException(
-                        "Specified tamboui.backend class " + providerSpec + " does not implement BackendProvider"
-                    );
-                }
-                BackendProvider provider = (BackendProvider) clazz.getDeclaredConstructor().newInstance();
-                return provider.create();
-            } catch (ClassNotFoundException e) {
-                throw new IllegalStateException(
-                    "Backend provider class specified in tamboui.backend not found: " + providerSpec, e
-                );
-            } catch (ReflectiveOperationException e) {
-                throw new IllegalStateException(
-                    "Failed to instantiate Backend provider class: " + providerSpec, e
-                );
-            }
-        }
+        String providerSpec = userSelectedProvider;
+        boolean isClassName = providerSpec != null && providerSpec.contains(".");
 
         // Load all available providers (needed for simple name matching or auto-discovery)
         ServiceLoader<BackendProvider> loader = ServiceLoader.load(BackendProvider.class);
-        List<BackendProvider> providers = new ArrayList<>();
-        loader.forEach(providers::add);
+        List<BackendProvider> providers = StreamSupport.stream(loader.spliterator(), false)
+                .filter(p -> {
+                    if (providerSpec == null || providerSpec.isEmpty()) {
+                        return true;
+                    }
+                    if (isClassName) {
+                        // If a class name is specified, filter to only that provider
+                        return p.getClass().getName().equals(providerSpec);
+                    }
+                    return p.name().equals(providerSpec);
+                })
+                .collect(Collectors.toList());
 
         if (providers.isEmpty()) {
-            throw new IllegalStateException(
-                "No BackendProvider found on classpath. " +
-                "Add a backend dependency such as tamboui-jline, or set the tamboui.backend system property " +
-                "or TAMBOUI_BACKEND environment variable."
-            );
-        }
-
-        // If a provider is explicitly specified (simple name), use it
-        if (providerSpec != null && !providerSpec.isEmpty()) {
-            BackendProvider selected = findProvider(providerSpec, providers);
-            if (selected == null) {
-                String availableProviders = formatAvailableProviders(providers);
-                throw new IllegalStateException(
-                    "BackendProvider '" + providerSpec + "' not found. " +
-                    "Available providers:\n" + availableProviders
-                );
+            String details = "";
+            if (isClassName) {
+                details = " for class name '" + providerSpec + "'";
+            } else if (providerSpec != null && !providerSpec.isEmpty()) {
+                details = " for provider name '" + providerSpec + "'";
             }
-            return selected.create();
+            throw new IllegalStateException(
+                "No BackendProvider found on classpath" + details + ".\n" +
+                "Add a backend dependency such as tamboui-jline."
+            );
         }
 
         // No explicit selection - check if we have exactly one
@@ -117,26 +101,6 @@ public final class BackendFactory {
         }
 
         return providers.get(0).create();
-    }
-
-    /**
-     * Finds a provider by simple name.
-     * <p>
-     * Note: Fully qualified class names are handled earlier in {@link #create()}
-     * before ServiceLoader discovery, so this method only handles simple names.
-     *
-     * @param spec the provider specification (simple name)
-     * @param providers the list of available providers
-     * @return the matching provider, or null if not found
-     */
-    private static BackendProvider findProvider(String spec, List<BackendProvider> providers) {
-        // Match by simple name (case-insensitive)
-        for (BackendProvider provider : providers) {
-            if (spec.equalsIgnoreCase(provider.name())) {
-                return provider;
-            }
-        }
-        return null;
     }
 
     /**
