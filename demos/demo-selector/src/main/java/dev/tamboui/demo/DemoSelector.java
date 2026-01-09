@@ -200,7 +200,7 @@ public class DemoSelector extends ToolkitApp {
 
                 // Footer
                 panel(
-                        text(" Type: Filter | ←/→: Collapse/Expand | ↑↓: Navigate | Enter: Select | Ctrl+C: Quit ").dim()
+                        text(" Type: Filter | ←/→: Collapse/Expand | ↑↓: Navigate | PgUp/PgDn: Sections | Enter: Select | Ctrl+C: Quit ").dim()
                 ).rounded().borderColor(Color.DARK_GRAY).length(3)
         );
     }
@@ -229,6 +229,28 @@ public class DemoSelector extends ToolkitApp {
         }
         if (event.matches(Actions.END)) {
             listState.select(listSize - 1);
+            return EventResult.HANDLED;
+        }
+
+        // PAGE_DOWN: Jump to next section
+        if (event.matches(Actions.PAGE_DOWN)) {
+            for (int i = current + 1; i < listSize; i++) {
+                if (displayItems.get(i).demo() == null) {
+                    listState.select(i);
+                    break;
+                }
+            }
+            return EventResult.HANDLED;
+        }
+
+        // PAGE_UP: Jump to previous section
+        if (event.matches(Actions.PAGE_UP)) {
+            for (int i = current - 1; i >= 0; i--) {
+                if (displayItems.get(i).demo() == null) {
+                    listState.select(i);
+                    break;
+                }
+            }
             return EventResult.HANDLED;
         }
 
