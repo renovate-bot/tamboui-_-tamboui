@@ -22,7 +22,6 @@ import dev.tamboui.image.protocol.SixelProtocol;
 import dev.tamboui.layout.Constraint;
 import dev.tamboui.layout.Layout;
 import dev.tamboui.layout.Rect;
-import dev.tamboui.layout.Size;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Backend;
@@ -38,9 +37,7 @@ import dev.tamboui.widgets.block.Borders;
 import dev.tamboui.widgets.block.Title;
 import dev.tamboui.widgets.paragraph.Paragraph;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -73,8 +70,8 @@ public class ImageDemo {
     private final String imageTitle;
     private ImageProtocol currentProtocol;
     private ImageScaling currentScaling = ImageScaling.FIT;
-    private Backend currentBackend;
     private boolean needsFullRedraw;
+    private boolean forceProtocol;
 
     public static void main(String[] args) throws Exception {
         var customImagePath = args.length > 0 ? args[0] : null;
@@ -97,12 +94,11 @@ public class ImageDemo {
 
     public void run() throws Exception {
         try (var backend = BackendFactory.create()) {
-            this.currentBackend = backend;
             backend.enableRawMode();
             backend.enterAlternateScreen();
             backend.hideCursor();
 
-            var terminal = new Terminal<Backend>(backend);
+            var terminal = new Terminal<>(backend);
 
             // Handle resize
             backend.onResize(() -> {
@@ -123,11 +119,6 @@ public class ImageDemo {
 
                 terminal.draw(this::ui);
 
-                // For native protocols, render image after frame is drawn
-                if (currentProtocol.requiresRawOutput()) {
-                    renderNativeImage(backend);
-                }
-
                 var c = backend.read(100);
                 handleInput(c);
             }
@@ -135,68 +126,10 @@ public class ImageDemo {
     }
 
     /**
-     * Renders the image using a native protocol (Sixel, Kitty, iTerm2).
+     * Returns true if the current protocol is supported by the terminal.
      */
-    private void renderNativeImage(Backend backend) throws IOException {
-        // Calculate the image area (same as in ui())
-        var area = new Rect(0, 0, terminal().width(), terminal().height());
-        var layout = Layout.vertical()
-            .constraints(
-                Constraint.length(3),   // Header
-                Constraint.length(7),   // Capabilities info
-                Constraint.fill(),      // Image area
-                Constraint.length(4)    // Footer/help
-            )
-            .split(area);
-
-        var imageArea = layout.get(2);
-
-        if (imageArea.isEmpty()) {
-            return;
-        }
-
-        // Create output stream that writes to backend
-        var rawOutput = new OutputStream() {
-            @Override
-            public void write(int b) throws IOException {
-                backend.writeRaw(new byte[] {(byte) b});
-            }
-
-            @Override
-            public void write(byte[] b, int off, int len) throws IOException {
-                if (off == 0 && len == b.length) {
-                    backend.writeRaw(b);
-                } else {
-                    var slice = new byte[len];
-                    System.arraycopy(b, off, slice, 0, len);
-                    backend.writeRaw(slice);
-                }
-            }
-        };
-
-        // Create an Image widget (without block since it's already rendered by renderImage())
-        // and use its render method to properly apply scaling
-        var image = Image.builder()
-            .data(imageData)
-            .scaling(currentScaling)
-            .protocol(currentProtocol)
-            .build();
-
-        // Calculate inner area (accounting for block borders rendered in renderImage())
-        var innerArea = new Rect(imageArea.x() + 1, imageArea.y() + 1,
-            imageArea.width() - 2, imageArea.height() - 2);
-
-        // Render the image with raw output support
-        try {
-            image.render(innerArea, null, rawOutput);
-            backend.flush();
-        } catch (Exception e) {
-            // Ignore rendering errors for native protocols
-        }
-    }
-
-    private Size terminal() throws IOException {
-        return currentBackend.size();
+    private boolean isCurrentProtocolSupported() {
+        return capabilities.supports(currentProtocol.protocolType());
     }
 
     private void handleInput(int c) {
@@ -224,19 +157,15 @@ public class ImageDemo {
                 currentProtocol = ITERM2;
                 break;
             case 'f':
-            case 'F':
                 currentScaling = ImageScaling.FIT;
                 break;
             case 'i':
-            case 'I':
                 currentScaling = ImageScaling.FILL;
                 break;
             case 's':
-            case 'S':
                 currentScaling = ImageScaling.STRETCH;
                 break;
             case 'n':
-            case 'N':
                 currentScaling = ImageScaling.NONE;
                 break;
             case 'a':
@@ -244,13 +173,18 @@ public class ImageDemo {
                 // Auto-detect best protocol
                 currentProtocol = capabilities.bestProtocol();
                 break;
+            case 6: // Ctrl+F - force protocol
+                forceProtocol = true;
+                needsFullRedraw = true;
+                break;
             default:
                 break;
         }
 
-        // Force full redraw when switching protocols
+        // Force full redraw and reset force flag when switching protocols
         if (previousProtocol != currentProtocol) {
             needsFullRedraw = true;
+            forceProtocol = false;
         }
     }
 
@@ -351,6 +285,12 @@ public class ImageDemo {
     }
 
     private void renderImage(Frame frame, Rect area) {
+        // Check if the current protocol is not supported and not forced
+        if (!isCurrentProtocolSupported() && !forceProtocol) {
+            renderUnsupportedProtocolWarning(frame, area);
+            return;
+        }
+
         var image = Image.builder()
             .data(imageData)
             .scaling(currentScaling)
@@ -364,6 +304,32 @@ public class ImageDemo {
             .build();
 
         frame.renderWidget(image, area);
+    }
+
+    private void renderUnsupportedProtocolWarning(Frame frame, Rect area) {
+        var warningLine1 = Line.from(
+            Span.raw("The ").dim(),
+            Span.raw(currentProtocol.name()).bold().yellow(),
+            Span.raw(" protocol is not detected as supported by your terminal.").dim()
+        );
+        var warningLine2 = Line.from(
+            Span.raw("Press ").dim(),
+            Span.raw("Ctrl+F").bold().cyan(),
+            Span.raw(" to force using it anyway.").dim()
+        );
+
+        var warning = Paragraph.builder()
+            .text(Text.from(Line.empty(), warningLine1, Line.empty(), warningLine2))
+            .centered()
+            .block(Block.builder()
+                .borders(Borders.ALL)
+                .borderType(BorderType.ROUNDED)
+                .borderStyle(Style.EMPTY.fg(Color.YELLOW))
+                .title(Title.from(Line.from(Span.raw(" " + imageTitle + " ").blue())))
+                .build())
+            .build();
+
+        frame.renderWidget(warning, area);
     }
 
     private void renderFooter(Frame frame, Rect area) {
