@@ -10,9 +10,12 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -23,7 +26,7 @@ public class FileManagerController {
 
     public enum Side { LEFT, RIGHT }
 
-    public enum DialogType { NONE, COPY_CONFIRM, MOVE_CONFIRM, DELETE_CONFIRM, MKDIR_INPUT, GOTO_INPUT, ERROR }
+    public enum DialogType { NONE, COPY_CONFIRM, MOVE_CONFIRM, DELETE_CONFIRM, MKDIR_INPUT, GOTO_INPUT, ERROR, VIEW_FILE }
 
     private final DirectoryBrowserController leftBrowser;
     private final DirectoryBrowserController rightBrowser;
@@ -32,6 +35,8 @@ public class FileManagerController {
     private DialogType currentDialog = DialogType.NONE;
     private String dialogMessage = "";
     private final TextInputState inputState = new TextInputState();
+    private Path viewingFile;
+    private int textScrollPosition = 0;
 
     public FileManagerController(Path leftStart, Path rightStart) {
         this.leftBrowser = new DirectoryBrowserController(leftStart);
@@ -82,16 +87,51 @@ public class FileManagerController {
         return currentDialog == DialogType.MKDIR_INPUT || currentDialog == DialogType.GOTO_INPUT;
     }
 
+    public boolean isViewerDialog() {
+        return currentDialog == DialogType.VIEW_FILE;
+    }
+
+    public Path viewingFile() {
+        return viewingFile;
+    }
+
+    public int textScrollPosition() {
+        return textScrollPosition;
+    }
+
+    public void setTextScrollPosition(int position) {
+        this.textScrollPosition = Math.max(0, position);
+    }
+
+    public void scrollTextUp() {
+        textScrollPosition = Math.max(0, textScrollPosition - 1);
+    }
+
+    public void scrollTextDown() {
+        textScrollPosition = Math.max(0, textScrollPosition + 1);
+    }
+
+    public void scrollTextPageUp(int pageSize) {
+        textScrollPosition = Math.max(0, textScrollPosition - pageSize);
+    }
+
+    public void scrollTextPageDown(int pageSize) {
+        textScrollPosition = Math.max(0, textScrollPosition + pageSize);
+    }
+
     /**
      * Returns files to operate on: marked files if any, otherwise the selected file.
      */
     public List<Path> filesToOperate() {
-        var browser = activeBrowser();
+        DirectoryBrowserController browser = activeBrowser();
         if (browser.hasMarkedFiles()) {
             return browser.markedPaths();
         }
-        var selected = browser.selectedPath();
-        return selected != null ? List.of(selected) : List.of();
+        Path selected = browser.selectedPath();
+        if (selected != null) {
+            return Collections.singletonList(selected);
+        }
+        return Collections.emptyList();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -111,38 +151,38 @@ public class FileManagerController {
     // ═══════════════════════════════════════════════════════════════
 
     public void promptCopy() {
-        var files = filesToOperate();
+        List<Path> files = filesToOperate();
         if (files.isEmpty()) {
             return;
         }
 
-        var count = files.size();
-        var target = inactiveBrowser().currentDirectory();
+        int count = files.size();
+        Path target = inactiveBrowser().currentDirectory();
         dialogMessage = String.format("Copy %d item%s to %s?",
             count, count > 1 ? "s" : "", target);
         currentDialog = DialogType.COPY_CONFIRM;
     }
 
     public void promptMove() {
-        var files = filesToOperate();
+        List<Path> files = filesToOperate();
         if (files.isEmpty()) {
             return;
         }
 
-        var count = files.size();
-        var target = inactiveBrowser().currentDirectory();
+        int count = files.size();
+        Path target = inactiveBrowser().currentDirectory();
         dialogMessage = String.format("Move %d item%s to %s?",
             count, count > 1 ? "s" : "", target);
         currentDialog = DialogType.MOVE_CONFIRM;
     }
 
     public void promptDelete() {
-        var files = filesToOperate();
+        List<Path> files = filesToOperate();
         if (files.isEmpty()) {
             return;
         }
 
-        var count = files.size();
+        int count = files.size();
         dialogMessage = String.format("Delete %d item%s permanently?",
             count, count > 1 ? "s" : "");
         currentDialog = DialogType.DELETE_CONFIRM;
@@ -150,10 +190,17 @@ public class FileManagerController {
 
     public void confirmDialog() {
         switch (currentDialog) {
-            case COPY_CONFIRM -> executeCopy();
-            case MOVE_CONFIRM -> executeMove();
-            case DELETE_CONFIRM -> executeDelete();
-            default -> {}
+            case COPY_CONFIRM:
+                executeCopy();
+                break;
+            case MOVE_CONFIRM:
+                executeMove();
+                break;
+            case DELETE_CONFIRM:
+                executeDelete();
+                break;
+            default:
+                break;
         }
         dismissDialog();
     }
@@ -162,6 +209,8 @@ public class FileManagerController {
         currentDialog = DialogType.NONE;
         dialogMessage = "";
         inputState.clear();
+        viewingFile = null;
+        textScrollPosition = 0;
     }
 
     public void promptMkdir() {
@@ -172,7 +221,7 @@ public class FileManagerController {
 
     public void confirmMkdir() {
         if (inputState.length() > 0) {
-            var targetDir = activeBrowser().currentDirectory().resolve(inputState.text());
+            Path targetDir = activeBrowser().currentDirectory().resolve(inputState.text());
             try {
                 Files.createDirectory(targetDir);
                 activeBrowser().refresh();
@@ -192,7 +241,7 @@ public class FileManagerController {
 
     public void confirmGoto() {
         if (inputState.length() > 0) {
-            var targetDir = Path.of(inputState.text());
+            Path targetDir = Paths.get(inputState.text());
             if (Files.isDirectory(targetDir)) {
                 activeBrowser().navigateTo(targetDir);
             } else {
@@ -208,17 +257,27 @@ public class FileManagerController {
         currentDialog = DialogType.ERROR;
     }
 
+    public void promptViewFile() {
+        Path selected = activeBrowser().selectedPath();
+        if (selected == null || Files.isDirectory(selected)) {
+            return;
+        }
+        viewingFile = selected;
+        textScrollPosition = 0;
+        currentDialog = DialogType.VIEW_FILE;
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // COMMANDS - File operations
     // ═══════════════════════════════════════════════════════════════
 
     private void executeCopy() {
-        var files = filesToOperate();
-        var targetDir = inactiveBrowser().currentDirectory();
+        List<Path> files = filesToOperate();
+        Path targetDir = inactiveBrowser().currentDirectory();
 
-        for (var source : files) {
+        for (Path source : files) {
             try {
-                var target = targetDir.resolve(source.getFileName());
+                Path target = targetDir.resolve(source.getFileName());
                 if (Files.isDirectory(source)) {
                     copyDirectoryRecursively(source, target);
                 } else {
@@ -235,12 +294,12 @@ public class FileManagerController {
     }
 
     private void executeMove() {
-        var files = filesToOperate();
-        var targetDir = inactiveBrowser().currentDirectory();
+        List<Path> files = filesToOperate();
+        Path targetDir = inactiveBrowser().currentDirectory();
 
-        for (var source : files) {
+        for (Path source : files) {
             try {
-                var target = targetDir.resolve(source.getFileName());
+                Path target = targetDir.resolve(source.getFileName());
                 Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 showError("Move failed: " + e.getMessage());
@@ -254,9 +313,9 @@ public class FileManagerController {
     }
 
     private void executeDelete() {
-        var files = filesToOperate();
+        List<Path> files = filesToOperate();
 
-        for (var path : files) {
+        for (Path path : files) {
             try {
                 if (Files.isDirectory(path)) {
                     deleteDirectoryRecursively(path);
@@ -274,17 +333,17 @@ public class FileManagerController {
     }
 
     private void copyDirectoryRecursively(Path source, Path target) throws IOException {
-        Files.walkFileTree(source, new SimpleFileVisitor<>() {
+        Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                var targetDir = target.resolve(source.relativize(dir));
+                Path targetDir = target.resolve(source.relativize(dir));
                 Files.createDirectories(targetDir);
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                var targetFile = target.resolve(source.relativize(file));
+                Path targetFile = target.resolve(source.relativize(file));
                 Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
                 return FileVisitResult.CONTINUE;
             }
@@ -292,7 +351,7 @@ public class FileManagerController {
     }
 
     private void deleteDirectoryRecursively(Path directory) throws IOException {
-        Files.walkFileTree(directory, new SimpleFileVisitor<>() {
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 Files.delete(file);

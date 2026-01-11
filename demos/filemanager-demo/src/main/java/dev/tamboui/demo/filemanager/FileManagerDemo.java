@@ -1,6 +1,9 @@
 //DEPS dev.tamboui:tamboui-toolkit:LATEST
 //DEPS dev.tamboui:tamboui-jline:LATEST
+//DEPS dev.tamboui:tamboui-image:LATEST
 //SOURCES FileManagerController.java FileManagerView.java FileManagerKeyHandler.java DirectoryBrowserController.java
+// Prevents OSX from showing up in the terminal when running the demo
+//JAVA_OPTIONS -Dapple.awt.UIElement=true
 
 /*
  * Copyright (c) 2025 TamboUI Contributors
@@ -12,6 +15,7 @@ import dev.tamboui.toolkit.app.ToolkitRunner;
 import dev.tamboui.tui.TuiConfig;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 
 /**
@@ -36,30 +40,37 @@ import java.time.Duration;
  *   <li>F5/C - Copy to other panel</li>
  *   <li>F6/M - Move to other panel</li>
  *   <li>F8/D - Delete</li>
+ *   <li>V - View file (text files show in scrollable paragraph, PNG images show in Image widget)</li>
  *   <li>R - Refresh</li>
  *   <li>Q - Quit</li>
+ * </ul>
+ * <p>Viewer key bindings:
+ * <ul>
+ *   <li>Esc - Close viewer</li>
+ *   <li>Up/Down - Scroll text (text files only)</li>
+ *   <li>PgUp/PgDn - Page scroll text (text files only)</li>
  * </ul>
  */
 public class FileManagerDemo {
 
     public static void main(String[] args) throws Exception {
         // Determine starting directories
-        var home = Path.of(System.getProperty("user.home"));
-        var leftStart = args.length > 0 ? Path.of(args[0]) : home;
-        var rightStart = args.length > 1 ? Path.of(args[1]) : home;
+        Path home = Paths.get(System.getProperty("user.home"));
+        Path leftStart = args.length > 0 ? Paths.get(args[0]) : Paths.get(".");
+        Path rightStart = args.length > 1 ? Paths.get(args[1]) : home;
 
         // Create the model
-        var manager = new FileManagerController(leftStart, rightStart);
+        FileManagerController manager = new FileManagerController(leftStart, rightStart);
 
         // Create the view (implements Element with handleKeyEvent)
-        var view = new FileManagerView(manager);
+        FileManagerView view = new FileManagerView(manager);
 
         // Run the application
-        var config = TuiConfig.builder()
+        TuiConfig config = TuiConfig.builder()
             .tickRate(Duration.ofMillis(50))
             .build();
 
-        try (var runner = ToolkitRunner.create(config)) {
+        try (ToolkitRunner runner = ToolkitRunner.create(config)) {
             runner.run(() -> view);
         }
     }
