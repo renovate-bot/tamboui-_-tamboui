@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Configuration for SVG recording, loaded from system properties.
+ * Configuration for Asciinema (.cast) recording, loaded from system properties.
  * This is an internal API and not part of the public contract.
  */
 public final class RecordingConfig {

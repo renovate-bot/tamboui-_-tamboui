@@ -256,7 +256,7 @@ public abstract class GenerateDemosGalleryTask extends DefaultTask {
             sb.append("AsciinemaPlayer.create('").append(castBasePath).append("/")
                     .append(demo.castFileName()).append("', document.getElementById('player-")
                     .append(demo.id()).append("'), {\n");
-            sb.append("    autoPlay: true, loop: true, fit: 'width'\n");
+            sb.append("    autoPlay: true, terminalLineHeight: 1, loop: true, fit: 'width'\n");
             sb.append("});\n");
             sb.append("</script>\n");
             sb.append("++++\n\n");
