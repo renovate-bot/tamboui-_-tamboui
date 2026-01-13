@@ -4,6 +4,7 @@
  */
 package dev.tamboui.widgets.paragraph;
 
+import dev.tamboui.assertj.BufferAssertions;
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.layout.Alignment;
 import dev.tamboui.layout.Rect;
@@ -139,12 +140,10 @@ class ParagraphTest {
 
         paragraph.render(area, buffer);
 
-        // Should show "Hello" (5 chars) and nothing beyond
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo("e");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(3, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("o");
+        // Should show "Hello" (5 chars)
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hello", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -166,10 +165,10 @@ class ParagraphTest {
         paragraph.render(area, buffer);
 
         // "RedBl" - Red keeps red style, Bl keeps blue style
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("R");
-        assertThat(buffer.get(0, 0).style().fg()).contains(Color.RED);
-        assertThat(buffer.get(3, 0).symbol()).isEqualTo("B");
-        assertThat(buffer.get(3, 0).style().fg()).contains(Color.BLUE);
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Red", redStyle);
+        expected.setString(3, 0, "Bl", blueStyle);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -184,9 +183,9 @@ class ParagraphTest {
 
         paragraph.render(area, buffer);
 
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo("i");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo(" ");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hi", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -201,12 +200,10 @@ class ParagraphTest {
 
         paragraph.render(area, buffer);
 
-        // First line: "Hello"
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("o");
-        // Second line: "World"
-        assertThat(buffer.get(0, 1).symbol()).isEqualTo("W");
-        assertThat(buffer.get(4, 1).symbol()).isEqualTo("d");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hello", Style.EMPTY);
+        expected.setString(0, 1, "World", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -221,12 +218,10 @@ class ParagraphTest {
 
         paragraph.render(area, buffer);
 
-        // First line: "Hello"
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("o");
-        // Second line: "World"
-        assertThat(buffer.get(0, 1).symbol()).isEqualTo("W");
-        assertThat(buffer.get(4, 1).symbol()).isEqualTo("d");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hello", Style.EMPTY);
+        expected.setString(0, 1, "World", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -241,12 +236,12 @@ class ParagraphTest {
 
         paragraph.render(area, buffer);
 
-        // First line: "Super"
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("S");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("r");
-        // Second line: "calif"
-        assertThat(buffer.get(0, 1).symbol()).isEqualTo("c");
-        assertThat(buffer.get(4, 1).symbol()).isEqualTo("f");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Super", Style.EMPTY);
+        expected.setString(0, 1, "calif", Style.EMPTY);
+        expected.setString(0, 2, "ragil", Style.EMPTY);
+        expected.setString(0, 3, "istic", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -262,11 +257,9 @@ class ParagraphTest {
         paragraph.render(area, buffer);
 
         // Should show "Hello..." (5 chars + 3 dots = 8)
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("o");
-        assertThat(buffer.get(5, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(6, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(7, 0).symbol()).isEqualTo(".");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hello...", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -281,9 +274,9 @@ class ParagraphTest {
 
         paragraph.render(area, buffer);
 
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("o");
-        assertThat(buffer.get(5, 0).symbol()).isEqualTo(" ");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hello", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -299,11 +292,9 @@ class ParagraphTest {
         paragraph.render(area, buffer);
 
         // Should show "...World" (3 dots + 5 chars = 8)
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(3, 0).symbol()).isEqualTo("W");
-        assertThat(buffer.get(7, 0).symbol()).isEqualTo("d");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "...World", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -318,16 +309,10 @@ class ParagraphTest {
 
         paragraph.render(area, buffer);
 
-        // Should show "He...rld" (3 left + 3 dots + 2 right = 8)
-        // Actually: availableChars = 8 - 3 = 5, leftChars = (5+1)/2 = 3, rightChars = 5/2 = 2
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo("e");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(3, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(5, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(6, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(7, 0).symbol()).isEqualTo("d");
+        // Should show "Hel...ld" (3 left + 3 dots + 2 right = 8)
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hel...ld", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -343,7 +328,8 @@ class ParagraphTest {
         paragraph.render(area, buffer);
 
         // Width 2 is less than ellipsis length (3), so just clip
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo("e");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "He", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 }

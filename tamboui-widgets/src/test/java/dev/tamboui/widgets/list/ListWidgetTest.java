@@ -244,11 +244,9 @@ class ListWidgetTest {
         list.render(area, buffer, state);
 
         // Should show "Hello" (5 chars)
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo("e");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(3, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("o");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hello", Style.EMPTY);
+        assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -269,11 +267,9 @@ class ListWidgetTest {
         list.render(area, buffer, state);
 
         // Should show "Hello..." (5 chars + 3 dots = 8)
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo("o");
-        assertThat(buffer.get(5, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(6, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(7, 0).symbol()).isEqualTo(".");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hello...", Style.EMPTY);
+        assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -294,11 +290,9 @@ class ListWidgetTest {
         list.render(area, buffer, state);
 
         // Should show "...World" (3 dots + 5 chars = 8)
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(3, 0).symbol()).isEqualTo("W");
-        assertThat(buffer.get(7, 0).symbol()).isEqualTo("d");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "...World", Style.EMPTY);
+        assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -319,14 +313,9 @@ class ListWidgetTest {
         list.render(area, buffer, state);
 
         // Should show "Hel...ld" (3 left + 3 dots + 2 right = 8)
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo("e");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(3, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(4, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(5, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(6, 0).symbol()).isEqualTo("l");
-        assertThat(buffer.get(7, 0).symbol()).isEqualTo("d");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hel...ld", Style.EMPTY);
+        assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -346,9 +335,9 @@ class ListWidgetTest {
 
         list.render(area, buffer, state);
 
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo("i");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo(" ");
+        Buffer expected = Buffer.empty(area);
+        expected.setString(0, 0, "Hi", Style.EMPTY);
+        assertThat(buffer).isEqualTo(expected);
     }
 
     @Test
@@ -371,11 +360,11 @@ class ListWidgetTest {
 
         // Symbol takes 2 chars, leaving 8 for content
         // Should show "> Hello..." (> + space + Hello + ...)
-        assertThat(buffer.get(0, 0).symbol()).isEqualTo(">");
-        assertThat(buffer.get(1, 0).symbol()).isEqualTo(" ");
-        assertThat(buffer.get(2, 0).symbol()).isEqualTo("H");
-        assertThat(buffer.get(7, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(8, 0).symbol()).isEqualTo(".");
-        assertThat(buffer.get(9, 0).symbol()).isEqualTo(".");
+        Style highlightStyle = Style.EMPTY.reversed();
+        Buffer expected = Buffer.empty(area);
+        expected.setStyle(area, highlightStyle);
+        expected.setString(0, 0, "> ", Style.EMPTY);
+        expected.setString(2, 0, "Hello...", highlightStyle);
+        assertThat(buffer).isEqualTo(expected);
     }
 }
