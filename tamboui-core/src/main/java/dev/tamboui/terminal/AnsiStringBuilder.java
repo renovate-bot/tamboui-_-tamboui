@@ -6,6 +6,7 @@ package dev.tamboui.terminal;
 
 import dev.tamboui.style.AnsiColor;
 import dev.tamboui.style.Color;
+import dev.tamboui.style.Hyperlink;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
 
@@ -147,5 +148,50 @@ public final class AnsiStringBuilder {
             return "58;2;" + rgb.r() + ";" + rgb.g() + ";" + rgb.b();
         }
         return "";
+    }
+
+    /**
+     * Generates an OSC8 hyperlink escape sequence to start a hyperlink.
+     * <p>
+     * OSC8 format: {@code \033]8;id=<id>;<url>\033\\}
+     * If no ID is provided, the format is: {@code \033]8;;<url>\033\\}
+     *
+     * @param hyperlink the hyperlink to generate a sequence for
+     * @return the OSC8 escape sequence to start the hyperlink
+     */
+    public static String hyperlinkStart(Hyperlink hyperlink) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ESC).append("]8;");
+        if (hyperlink.id().isPresent()) {
+            sb.append("id=").append(escapeOscParam(hyperlink.id().get()));
+        }
+        sb.append(";");
+        sb.append(escapeOscParam(hyperlink.url()));
+        sb.append(ESC).append("\\");
+        return sb.toString();
+    }
+
+    /**
+     * Generates an OSC8 escape sequence to end a hyperlink.
+     * <p>
+     * Format: {@code \033]8;;\033\\}
+     *
+     * @return the OSC8 escape sequence to end the hyperlink
+     */
+    public static String hyperlinkEnd() {
+        return ESC + "]8;;" + ESC + "\\";
+    }
+
+    /**
+     * Escapes special characters in OSC parameter values.
+     * <p>
+     * According to the OSC8 specification, semicolons and backslashes need to be escaped.
+     *
+     * @param param the parameter value to escape
+     * @return the escaped parameter value
+     */
+    private static String escapeOscParam(String param) {
+        // Escape backslashes and semicolons
+        return param.replace("\\", "\\\\").replace(";", "\\;");
     }
 }

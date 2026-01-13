@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2025 TamboUI Contributors
+a * Copyright (c) 2025 TamboUI Contributors
  * SPDX-License-Identifier: MIT
  */
 package dev.tamboui.terminal;
 
 import dev.tamboui.style.AnsiColor;
 import dev.tamboui.style.Color;
+import dev.tamboui.style.Hyperlink;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
 import org.junit.jupiter.api.DisplayName;
@@ -168,4 +169,36 @@ class AnsiStringBuilderTest {
         String result = AnsiStringBuilder.underlineColorToAnsi(Color.RED);
         assertThat(result).isEmpty();
     }
+
+    @Test
+    @DisplayName("hyperlinkStart without id")
+    void hyperlinkStartWithoutId() {
+        Hyperlink hyperlink = Hyperlink.of("https://example.com");
+        String result = AnsiStringBuilder.hyperlinkStart(hyperlink);
+        assertThat(result).isEqualTo("\u001b]8;;https://example.com\u001b\\");
+    }
+
+    @Test
+    @DisplayName("hyperlinkStart with id")
+    void hyperlinkStartWithId() {
+        Hyperlink hyperlink = Hyperlink.of("https://example.com", "link-1");
+        String result = AnsiStringBuilder.hyperlinkStart(hyperlink);
+        assertThat(result).isEqualTo("\u001b]8;id=link-1;https://example.com\u001b\\");
+    }
+
+    @Test
+    @DisplayName("hyperlinkStart escapes id and url")
+    void hyperlinkStartEscapesParams() {
+        Hyperlink hyperlink = Hyperlink.of("https://example.com/a;b\\c", "id;1\\2");
+        String result = AnsiStringBuilder.hyperlinkStart(hyperlink);
+        assertThat(result).isEqualTo("\u001b]8;id=id\\;1\\\\2;https://example.com/a\\;b\\\\c\u001b\\");
+    }
+
+    @Test
+    @DisplayName("hyperlinkEnd sequence")
+    void hyperlinkEndSequence() {
+        String result = AnsiStringBuilder.hyperlinkEnd();
+        assertThat(result).isEqualTo("\u001b]8;;\u001b\\");
+    }
+
 }
