@@ -13,12 +13,15 @@ import dev.tamboui.layout.Position;
 import dev.tamboui.layout.Size;
 import dev.tamboui.style.AnsiColor;
 import dev.tamboui.style.Color;
+import dev.tamboui.style.Hyperlink;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
+import dev.tamboui.terminal.AnsiStringBuilder;
 import dev.tamboui.terminal.Backend;
 
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.Objects;
 
 /**
  * Terminal backend implementation using Panama FFI.
@@ -54,6 +57,13 @@ public class PanamaBackend implements Backend {
         this.mouseEnabled = false;
     }
 
+    PanamaBackend(PlatformTerminal terminal) {
+        this.terminal = Objects.requireNonNull(terminal, "terminal");
+        this.outputBuffer = new ByteArrayBuilder(INITIAL_BUFFER_SIZE);
+        this.inAlternateScreen = false;
+        this.mouseEnabled = false;
+    }
+
     private static PlatformTerminal createPlatformTerminal() throws IOException {
         if (PlatformConstants.isWindows()) {
             return new WindowsTerminal();
@@ -65,6 +75,7 @@ public class PanamaBackend implements Backend {
     @Override
     public void draw(Iterable<CellUpdate> updates) throws IOException {
         Style lastStyle = null;
+        Hyperlink lastHyperlink = null;
 
         for (CellUpdate update : updates) {
             // Move cursor
@@ -73,12 +84,27 @@ public class PanamaBackend implements Backend {
             // Apply style if changed
             Cell cell = update.cell();
             if (!cell.style().equals(lastStyle)) {
+                Hyperlink currentHyperlink = cell.style().hyperlink().orElse(null);
+                if (!Objects.equals(currentHyperlink, lastHyperlink)) {
+                    if (lastHyperlink != null) {
+                        outputBuffer.appendUtf8(AnsiStringBuilder.hyperlinkEnd());
+                    }
+                    if (currentHyperlink != null) {
+                        outputBuffer.appendUtf8(AnsiStringBuilder.hyperlinkStart(currentHyperlink));
+                    }
+                    lastHyperlink = currentHyperlink;
+                }
+
                 applyStyle(cell.style());
                 lastStyle = cell.style();
             }
 
             // Write symbol (may contain UTF-8 multi-byte characters)
             outputBuffer.appendUtf8(cell.symbol());
+        }
+
+        if (lastHyperlink != null) {
+            outputBuffer.appendUtf8(AnsiStringBuilder.hyperlinkEnd());
         }
 
         // Reset style after drawing

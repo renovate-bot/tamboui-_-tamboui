@@ -10,8 +10,10 @@ import dev.tamboui.layout.Position;
 import dev.tamboui.layout.Size;
 import dev.tamboui.style.AnsiColor;
 import dev.tamboui.style.Color;
+import dev.tamboui.style.Hyperlink;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
+import dev.tamboui.terminal.AnsiStringBuilder;
 import dev.tamboui.terminal.Backend;
 import org.jline.terminal.Attributes;
 import org.jline.terminal.Terminal;
@@ -23,6 +25,7 @@ import org.jline.utils.NonBlockingReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.EnumSet;
+import java.util.Objects;
 
 /**
  * JLine 3 based backend for terminal operations.
@@ -53,6 +56,7 @@ public class JLineBackend implements Backend {
     @Override
     public void draw(Iterable<CellUpdate> updates) throws IOException {
         Style lastStyle = null;
+        Hyperlink lastHyperlink = null;
 
         for (CellUpdate update : updates) {
             // Move cursor
@@ -61,12 +65,31 @@ public class JLineBackend implements Backend {
             // Apply style if changed
             Cell cell = update.cell();
             if (!cell.style().equals(lastStyle)) {
+                // Check if hyperlink changed
+                Hyperlink currentHyperlink = cell.style().hyperlink().orElse(null);
+                if (!Objects.equals(currentHyperlink, lastHyperlink)) {
+                    // End previous hyperlink if any
+                    if (lastHyperlink != null) {
+                        writer.print(AnsiStringBuilder.hyperlinkEnd());
+                    }
+                    // Start new hyperlink if any
+                    if (currentHyperlink != null) {
+                        writer.print(AnsiStringBuilder.hyperlinkStart(currentHyperlink));
+                    }
+                    lastHyperlink = currentHyperlink;
+                }
+
                 applyStyle(cell.style());
                 lastStyle = cell.style();
             }
 
             // Write symbol
             writer.print(cell.symbol());
+        }
+
+        // End any active hyperlink
+        if (lastHyperlink != null) {
+            writer.print(AnsiStringBuilder.hyperlinkEnd());
         }
 
         // Reset style after drawing
