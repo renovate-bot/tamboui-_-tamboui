@@ -360,9 +360,12 @@ class ListWidgetTest {
 
         // Symbol takes 2 chars, leaving 8 for content
         // Should show "> Hello..." (> + space + Hello + ...)
+        // Note: The highlight style is only applied to the content area, not the symbol area
+        // (see ListWidget line 237-238: "Only fill the content area, not the symbol area, so symbol keeps its own style")
         Style highlightStyle = Style.EMPTY.reversed();
         Buffer expected = Buffer.empty(area);
-        expected.setStyle(area, highlightStyle);
+        // Only content area (x=2 onwards) gets highlight style
+        expected.setStyle(new Rect(2, 0, 8, 1), highlightStyle);
         expected.setString(0, 0, "> ", Style.EMPTY);
         expected.setString(2, 0, "Hello...", highlightStyle);
         assertThat(buffer).isEqualTo(expected);
