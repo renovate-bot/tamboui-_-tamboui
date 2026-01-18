@@ -5,13 +5,11 @@
 package dev.tamboui.util;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -39,7 +37,7 @@ public final class SafeServiceLoader {
     }
 
     // Defensive cap: prevents "best effort" from becoming an infinite loop
-    private static final int MAX_CONSECUTIVE_ERRORS = 16;
+    private static final int MAX_CONSECUTIVE_ERRORS = 4;
 
     /**
      * Loads providers for the given service, skipping broken providers and continuing to try other providers.
@@ -53,7 +51,6 @@ public final class SafeServiceLoader {
         Objects.requireNonNull(service, "service");
 
         List<S> loaded = new ArrayList<S>();
-        Set<String> seen = new HashSet<String>();
 
         ServiceLoader<S> sl = ServiceLoader.load(service);
         Iterator<S> it = sl.iterator();
@@ -69,27 +66,8 @@ public final class SafeServiceLoader {
                 S provider = it.next(); // may throw
                 consecutiveErrors = 0;
 
-                // De-dup: protects against odd iterator recovery behavior and multiple resources.
-                String impl = provider.getClass().getName();
-                if (seen.add(impl)) {
-                    loaded.add(provider);
-                }
-
-            } catch (ServiceConfigurationError e) {
-                if (onError != null) {
-                    onError.accept(e);
-                }
-                if (++consecutiveErrors > MAX_CONSECUTIVE_ERRORS) {
-                    break;
-                }
-            } catch (UnsupportedClassVersionError e) {
-                if (onError != null) {
-                    onError.accept(e);
-                }
-                if (++consecutiveErrors > MAX_CONSECUTIVE_ERRORS) {
-                    break;
-                }
-            } catch (LinkageError e) {
+                loaded.add(provider);
+            } catch (ServiceConfigurationError | LinkageError e) {
                 if (onError != null) {
                     onError.accept(e);
                 }
