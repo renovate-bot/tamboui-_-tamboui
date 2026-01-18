@@ -5,15 +5,15 @@
 package dev.tamboui.capability.core;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.ServiceLoader;
-import java.util.StringJoiner;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import dev.tamboui.capability.CapabilityProvider;
 import dev.tamboui.capability.CapabilityReportBuilder;
 import dev.tamboui.terminal.BackendProvider;
+import dev.tamboui.util.SafeServiceLoader;
 
 /**
  * Core capability contributor: prints what core assumes/uses and what it can infer from the environment.
@@ -27,62 +27,33 @@ public final class CoreCapabilityProvider implements CapabilityProvider {
 
     @Override
     public void contribute(CapabilityReportBuilder report) {
-        report.section(source(), "sysproperties")
-                .kv("java.version", System.getProperty("java.version"))
-                .kv("java.vendor", System.getProperty("java.vendor"))
-                .kv("os.name", System.getProperty("os.name"))
-                .kv("os.arch", System.getProperty("os.arch"))
-                .kv("os.version", System.getProperty("os.version"))
-                .kv("tamboui.backend", System.getProperty("tamboui.backend"))
-                .end();
+        report.property(source(), "java.version");
+        report.property(source(), "java.vendor");
+        report.property(source(), "os.name");
+        report.property(source(), "os.arch");
+        report.property(source(), "os.version");
+        report.property(source(), "tamboui.backend");
 
-        report.section(source(), "environment")
-                .kv("TERM", getenv("TERM"))
-                .kv("COLORTERM", getenv("COLORTERM"))
-                .kv("TERM_PROGRAM", getenv("TERM_PROGRAM"))
-                .kv("TERM_PROGRAM_VERSION", getenv("TERM_PROGRAM_VERSION"))
-                .kv("LC_ALL", getenv("LC_ALL"))
-                .kv("LANG", getenv("LANG"))
-                .kv("TAMBOUI_BACKEND", getenv("TAMBOUI_BACKEND"))
-                .end();
+        report.env(source(), "TERM");
+        report.env(source(), "COLORTERM");
+        report.env(source(), "TERM_PROGRAM");
+        report.env(source(), "TERM_PROGRAM_VERSION");
+        report.env(source(), "LC_ALL");
+        report.env(source(), "LANG");
+        report.env(source(), "TAMBOUI_BACKEND");
 
-        List<BackendProvider> providers = discoverBackends();
-        CapabilityReportBuilder.Section backends = report.section(source(), "features")
-                .kv("backend.count", providers.size());
-        backends.feature("backend.present", !providers.isEmpty());
-        backends.kv("backend.providers", String.join(",", providers.stream().map(BackendProvider::name).collect(Collectors.toList())));
-        backends.end();
+        List<String> loadErrors = new ArrayList<String>();
+        List<BackendProvider> providers = SafeServiceLoader.load(BackendProvider.class, err -> {
+            loadErrors.add(String.valueOf(err.getMessage()));
+        });
 
-        // these are what LLM found as something tamboui assumes.
-        // no need to print it until we actually query/adapt to it.
-        /*report.section("Core terminal features used/assumed")
-                .line("Screen management: alternate screen enter/leave")
-                .line("Input: raw mode enable/disable, timed read/peek")
-                .line("Rendering: cursor positioning + diff-based drawing")
-                .line("Cursor: hide/show + set position")
-                .line("Resize: onResize callback")
-                .line("Optional: mouse capture, scroll up/down, raw byte output (images)")
-                .end();
-                */
-    }
-
-    private static List<BackendProvider> discoverBackends() {
-        ServiceLoader<BackendProvider> loader = ServiceLoader.load(BackendProvider.class);
-        List<BackendProvider> providers = new ArrayList<>();
-        for (BackendProvider provider : loader) {
-            providers.add(provider);
-        }
-        return providers;
-    }
-
-
-    private static String getenv(String name) {
-        try {
-            return System.getenv(name);
-        } catch (SecurityException e) {
-            return null;
+        report.feature(source(), "backend.provider_count", providers.size());
+        report.feature(source(), "backend.provider_names", String.join(",", providers.stream().map(BackendProvider::name).collect(Collectors.toList())));
+        for (int i = 0; i < loadErrors.size(); i++) {
+            report.feature(source(), "backend.provider_error." + i, loadErrors.get(i));
         }
     }
+
 }
 
 

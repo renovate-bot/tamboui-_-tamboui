@@ -16,12 +16,10 @@ public final class TestCapabilityProvider implements CapabilityProvider {
 
     @Override
     public void contribute(CapabilityReportBuilder report) {
-        report.section(source(), "Test")
-            .kv("foo", "bar")
-            .kv("answer", 42)
-            .feature("feature.a", true)
-            .feature("feature.b", false)
-            .end();
+        report.feature(source(), "foo", "bar");
+        report.feature(source(), "answer", 42);
+        report.feature(source(), "feature.a", true);
+        report.feature(source(), "feature.b", false);
     }
 }
 

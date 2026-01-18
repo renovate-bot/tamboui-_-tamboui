@@ -10,82 +10,151 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Aggregated capability information from all discovered {@link CapabilityProvider}s.
  */
 public final class CapabilityReport {
-    private final List<CapabilitySection> sections;
-    private final Map<String, CapabilitySection> sectionsByTitle;
+    private final Map<String, List<String>> environmentBySource;
+    private final Map<String, List<String>> propertiesBySource;
+    private final Map<String, Map<String, Object>> featuresBySource;
 
-    CapabilityReport(List<CapabilitySection> sections) {
-        this.sections = Collections.unmodifiableList(sections);
-        Map<String, CapabilitySection> byTitle = new LinkedHashMap<>();
-        for (CapabilitySection section : sections) {
-            byTitle.put(section.title(), section);
-        }
-        this.sectionsByTitle = Collections.unmodifiableMap(byTitle);
-    }
-
-    public List<CapabilitySection> sections() {
-        return sections;
-    }
-
-    public Optional<CapabilitySection> section(String title) {
-        if (title == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(sectionsByTitle.get(title));
-    }
-
-    public Optional<Object> value(String sectionTitle, String key) {
-        return section(sectionTitle).flatMap(s -> s.value(key));
-    }
-
-    public Optional<String> stringValue(String sectionTitle, String key) {
-        return value(sectionTitle, key, String.class);
+    CapabilityReport(
+            Map<String, List<String>> environmentBySource,
+            Map<String, List<String>> propertiesBySource,
+            Map<String, Map<String, Object>> featuresBySource
+    ) {
+        this.environmentBySource = Collections.unmodifiableMap(new LinkedHashMap<>(environmentBySource));
+        this.propertiesBySource = Collections.unmodifiableMap(new LinkedHashMap<>(propertiesBySource));
+        this.featuresBySource = Collections.unmodifiableMap(new LinkedHashMap<>(featuresBySource));
     }
 
     /**
-     * Looks up a value by section title and key, and returns it if it matches the requested type.
+     * Environment entries grouped by provider source.
+     * <p>
+     * Each list entry is an environment variable name (value is resolved at print-time).
+     */
+    public Map<String, List<String>> environmentBySource() {
+        return environmentBySource;
+    }
+
+    /**
+     * Java/system properties (and similar) grouped by provider source.
+     * <p>
+     * Each list entry is a property name (value is resolved at print-time).
+     */
+    public Map<String, List<String>> propertiesBySource() {
+        return propertiesBySource;
+    }
+
+    /**
+     * Free-form capability/features map, grouped by provider source.
+     * <p>
+     * Keys SHOULD use dotted notation to create stable namespaces, e.g. {@code image.protocol.kitty}.
+     */
+    public Map<String, Map<String, Object>> featuresBySource() {
+        return featuresBySource;
+    }
+
+    public Optional<Object> feature(String source, String key) {
+        if (source == null || key == null) {
+            return Optional.empty();
+        }
+        Map<String, Object> m = featuresBySource.get(source);
+        if (m == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(m.get(key));
+    }
+
+    /**
+     * Looks up a feature by source and key, and returns it if it matches the requested type.
      *
-     * @param sectionTitle section title, e.g. {@code tamboui-core:environment}
-     * @param key          value key within the section
+     * @param source source id (e.g. {@code tamboui-core})
+     * @param key    key within the source feature map (prefer dotted notation)
      * @param type         desired value type
      * @param <T>          value type
      * @return typed value if present and assignable to {@code type}
      */
-    public <T> Optional<T> value(String sectionTitle, String key, Class<T> type) {
-        return section(sectionTitle).flatMap(s -> s.value(key, type));
-    }
-
-    public <T> Optional<T> value(CapabilityKey<T> key) {
-        if (key == null) {
+    public <T> Optional<T> feature(String source, String key, Class<T> type) {
+        if (type == null) {
             return Optional.empty();
         }
-        return value(key.sectionTitle(), key.key(), key.type());
-    }
-
-    public Optional<Boolean> feature(String sectionTitle, String key) {
-        return section(sectionTitle).flatMap(s -> s.feature(key));
+        Optional<Object> v = feature(source, key);
+        if (!v.isPresent()) {
+            return Optional.empty();
+        }
+        Object o = v.get();
+        if (!type.isInstance(o)) {
+            return Optional.empty();
+        }
+        return Optional.of(type.cast(o));
     }
 
     public void print(PrintStream out) {
         out.println("TamboUI capability report");
         out.println();
-        for (CapabilitySection section : sections()) {
-            out.println("== " + section.title());
-            if (!section.features().isEmpty()) {
-                for (Map.Entry<String, Boolean> entry : section.features().entrySet()) {
+
+        for (String source : sources()) {
+            List<String> env = environmentBySource.get(source);
+            if (env != null && !env.isEmpty()) {
+                out.println("== " + source + ":environment");
+                for (String key : env) {
+                    out.println(key + ": " + safeEnv(key));
+                }
+                out.println();
+            }
+
+            List<String> props = propertiesBySource.get(source);
+            if (props != null && !props.isEmpty()) {
+                out.println("== " + source + ":properties");
+                for (String key : props) {
+                    out.println(key + ": " + safeProperty(key));
+                }
+                out.println();
+            }
+
+            Map<String, Object> features = featuresBySource.get(source);
+            if (features != null && !features.isEmpty()) {
+                out.println("== " + source + ":features");
+                for (Map.Entry<String, Object> entry : features.entrySet()) {
                     out.println(entry.getKey() + ": " + entry.getValue());
                 }
+                out.println();
             }
-            if (!section.values().isEmpty()) {
-                for (Map.Entry<String, Object> entry : section.values().entrySet()) {
-                    out.println(entry.getKey() + ": " + entry.getValue());
-                }
-            }
-            out.println();
+        }
+    }
+
+    private Set<String> sources() {
+        Map<String, Boolean> all = new LinkedHashMap<>();
+        for (String s : environmentBySource.keySet()) {
+            all.put(s, Boolean.TRUE);
+        }
+        for (String s : propertiesBySource.keySet()) {
+            all.put(s, Boolean.TRUE);
+        }
+        for (String s : featuresBySource.keySet()) {
+            all.put(s, Boolean.TRUE);
+        }
+        return all.keySet();
+    }
+
+    private static String safeEnv(String key) {
+        try {
+            String v = System.getenv(key);
+            return v == null ? "<unset>" : v;
+        } catch (SecurityException e) {
+            return "<restricted>";
+        }
+    }
+
+    private static String safeProperty(String key) {
+        try {
+            String v = System.getProperty(key);
+            return v == null ? "<unset>" : v;
+        } catch (SecurityException e) {
+            return "<restricted>";
         }
     }
 }

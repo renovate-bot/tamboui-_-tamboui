@@ -4,31 +4,34 @@
  */
 package dev.tamboui.capability;
 
+import dev.tamboui.util.SafeServiceLoader;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.ServiceLoader;
 
 /**
- * Loads {@link CapabilityProvider}s via {@link ServiceLoader} and builds an aggregated report.
+ * Loads {@link CapabilityProvider}s via {@link java.util.ServiceLoader} and builds an aggregated report.
  */
 public final class CapabilityRegistry {
 
     private final List<CapabilityProvider> providers;
+    private final List<String> providerLoadErrors;
 
-    private CapabilityRegistry(List<CapabilityProvider> providers) {
+    private CapabilityRegistry(List<CapabilityProvider> providers, List<String> providerLoadErrors) {
         this.providers = Collections.unmodifiableList(providers);
+        this.providerLoadErrors = Collections.unmodifiableList(providerLoadErrors);
     }
 
     public static CapabilityRegistry load() {
-        ServiceLoader<CapabilityProvider> loader = ServiceLoader.load(CapabilityProvider.class);
         List<CapabilityProvider> providers = new ArrayList<>();
-        for (CapabilityProvider provider : loader) {
-            providers.add(provider);
-        }
+        List<String> providerLoadErrors = new ArrayList<>();
+
+        providers.addAll(SafeServiceLoader.load(CapabilityProvider.class, err ->
+                providerLoadErrors.add(String.valueOf(err.getMessage()))));
         providers.sort(Comparator.comparing(CapabilityProvider::source));
-        return new CapabilityRegistry(providers);
+        return new CapabilityRegistry(providers, providerLoadErrors);
     }
 
     public List<CapabilityProvider> providers() {
@@ -37,15 +40,18 @@ public final class CapabilityRegistry {
 
     public CapabilityReport buildReport() {
         CapabilityReportBuilder builder = new CapabilityReportBuilder();
+
+        for (int i = 0; i < providerLoadErrors.size(); i++) {
+            builder.feature("tamboui-core", "capabilityProvider.loadError." + i, providerLoadErrors.get(i));
+        }
+
         for (CapabilityProvider provider : providers) {
             try {
                 provider.contribute(builder);
             } catch (Exception e) {
-                builder.section(provider.source(), "CapabilityProviderError")
-                        .kv("providerClass", provider.getClass().getName())
-                        .kv("provider", provider.source())
-                        .kv("error", e.getClass().getName() + ": " + e.getMessage())
-                        .end();
+                builder.feature(provider.source(), "error", e.getClass().getName() + ": " + e.getMessage());
+            } catch (LinkageError e) {
+                builder.feature(provider.source(), "error", e.getClass().getName() + ": " + e.getMessage());
             }
         }
         return builder.build();

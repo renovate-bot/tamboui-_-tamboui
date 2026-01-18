@@ -15,54 +15,58 @@ import java.util.Objects;
  */
 public final class CapabilityReportBuilder {
 
-    private final List<CapabilitySection> sections = new ArrayList<>();
+    private final Map<String, List<String>> environmentBySource = new LinkedHashMap<>();
+    private final Map<String, List<String>> propertiesBySource = new LinkedHashMap<>();
+    private final Map<String, Map<String, Object>> featuresBySource = new LinkedHashMap<>();
 
-    public Section section(String source, String name) {
+    /**
+     * Adds an environment key that should be printed (value resolved at print-time).
+     * <p>
+     * Prefer using environment variable names as keys.
+     */
+    public CapabilityReportBuilder env(String source, String key) {
         Objects.requireNonNull(source, "source");
-        Objects.requireNonNull(name, "name");
-        return new Section(source, name);
+        if (key == null || key.isEmpty()) {
+            return this;
+        }
+        environmentBySource
+                .computeIfAbsent(source, s -> new ArrayList<String>())
+                .add(key);
+        return this;
+    }
+
+    /**
+     * Adds a property key that should be printed (value resolved at print-time).
+     * <p>
+     * Prefer using property names as keys (e.g. {@code java.version}).
+     */
+    public CapabilityReportBuilder property(String source, String key) {
+        Objects.requireNonNull(source, "source");
+        if (key == null || key.isEmpty()) {
+            return this;
+        }
+        propertiesBySource
+                .computeIfAbsent(source, s -> new ArrayList<String>())
+                .add(key);
+        return this;
+    }
+
+    /**
+     * Adds a general capability/feature. Keys SHOULD use dotted notation to create stable namespaces.
+     */
+    public CapabilityReportBuilder feature(String source, String key, Object value) {
+        Objects.requireNonNull(source, "source");
+        if (key == null || key.isEmpty()) {
+            return this;
+        }
+        featuresBySource
+                .computeIfAbsent(source, s -> new LinkedHashMap<String, Object>())
+                .put(key, value);
+        return this;
     }
 
     public CapabilityReport build() {
-        return new CapabilityReport(new ArrayList<>(sections));
-    }
-
-    public final class Section {
-        private final String source;
-        private final String name;
-        private final Map<String, Object> rawValues = new LinkedHashMap<>();
-        private final Map<String, Boolean> features = new LinkedHashMap<>();
-
-        private Section(String source, String name) {
-            this.source = source;
-            this.name = name;
-        }
-
-        public Section kv(String key, Object value) {
-            if (key == null || key.isEmpty()) {
-                return this;
-            }
-            rawValues.put(key, value);
-            return this;
-        }
-
-        public Section feature(String feature, boolean supported) {
-            if (feature == null || feature.isEmpty()) {
-                return this;
-            }
-            features.put(feature, supported);
-            return this;
-        }
-
-        public CapabilityReportBuilder end() {
-            sections.add(new CapabilitySection(
-                    source,
-                    name,
-                    new LinkedHashMap<String, Boolean>(features),
-                    new LinkedHashMap<String, Object>(rawValues)
-            ));
-            return CapabilityReportBuilder.this;
-        }
+        return new CapabilityReport(environmentBySource, propertiesBySource, featuresBySource);
     }
 }
 

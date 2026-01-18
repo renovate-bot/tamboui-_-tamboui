@@ -25,15 +25,12 @@ public final class ImageCapabilityProvider implements CapabilityProvider {
         TerminalImageCapabilities caps = TerminalImageCapabilities.detect();
         Set<TerminalImageProtocol> supported = caps.supportedProtocols();
 
-        CapabilityReportBuilder.Section images = report.section(source(), "features")
-                .kv("bestSupport", caps.bestSupport())
-                .kv("supportedProtocols", supported.stream().map(Enum::name).collect(Collectors.joining(", ")));
-
+        report.feature(source(), "best_image_protocol", caps.bestSupport());
+        report.feature(source(), "image_protocols", supported.stream().map(Enum::name).collect(Collectors.joining(", ")));
         for (TerminalImageProtocol protocol : TerminalImageProtocol.values()) {
-            images.feature("imageProtocol." + protocol.name().toLowerCase(), caps.supports(protocol));
+            report.feature(source(), "image_protocol." + protocol.name().toLowerCase(), caps.supports(protocol));
         }
-        images.feature("supportsNativeImages", caps.supportsNativeImages());
-        images.end();
+        report.feature(source(), "supports_native_images", caps.supportsNativeImages());
     }
 }
 

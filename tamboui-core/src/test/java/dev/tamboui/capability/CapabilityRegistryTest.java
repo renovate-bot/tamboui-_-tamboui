@@ -22,11 +22,24 @@ class CapabilityRegistryTest {
                 );
 
         CapabilityReport report = registry.buildReport();
-        assertThat(report.section("tamboui-test:Test")).isPresent();
-        assertThat(report.value("tamboui-test:Test", "foo", String.class)).contains("bar");
-        assertThat(report.value("tamboui-test:Test", "answer", Integer.class)).contains(42);
-        assertThat(report.feature("tamboui-test:Test", "feature.a")).contains(true);
-        assertThat(report.feature("tamboui-test:Test", "feature.b")).contains(false);
+        assertThat(report.feature("tamboui-core", "capabilityProvider.loadError.0", String.class))
+                .isPresent();
+        assertThat(report.feature("tamboui-core", "backend.providers", String.class))
+                .contains("test");
+        assertThat(report.feature("tamboui-core", "backend.order", String.class))
+                .hasValueSatisfying(v -> assertThat(v).contains("test").contains("missing"));
+        assertThat(report.feature("tamboui-core", "backend.selected", String.class))
+                .hasValue("test");
+        assertThat(report.feature("tamboui-core", "backend.test.loadable", Boolean.class))
+                .contains(true);
+        assertThat(report.feature("tamboui-core", "backend.missing.loadable", Boolean.class))
+                .contains(false);
+        assertThat(report.feature("tamboui-core", "backend.missing.error", String.class))
+                .isPresent();
+        assertThat(report.feature("tamboui-test", "foo", String.class)).contains("bar");
+        assertThat(report.feature("tamboui-test", "answer", Integer.class)).contains(42);
+        assertThat(report.feature("tamboui-test", "feature.a", Boolean.class)).contains(true);
+        assertThat(report.feature("tamboui-test", "feature.b", Boolean.class)).contains(false);
     }
 }
 
