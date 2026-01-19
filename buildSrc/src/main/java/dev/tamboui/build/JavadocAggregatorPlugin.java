@@ -14,16 +14,14 @@ import org.gradle.api.attributes.Category;
 import org.gradle.api.attributes.CompatibilityCheckDetails;
 import org.gradle.api.attributes.MultipleCandidatesDetails;
 import org.gradle.api.attributes.Usage;
-import org.gradle.api.file.RegularFile;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.external.javadoc.StandardJavadocDocletOptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +47,7 @@ public abstract class JavadocAggregatorPlugin implements Plugin<Project> {
                 });
             }
         });
-        Provider<Javadoc> javadocProvider = project.getTasks().register("javadoc", Javadoc.class, javadoc -> {
+        project.getTasks().register("javadoc", Javadoc.class, javadoc -> {
             javadoc.setDescription("Generate javadocs from all child projects as if it was a single project");
             javadoc.setGroup("Documentation");
 
@@ -62,50 +60,14 @@ public abstract class JavadocAggregatorPlugin implements Plugin<Project> {
             javadoc.setSource(javadocAggregator);
             javadoc.setClasspath(javadocAggregatorClasspath);
 
-            // Add theme stylesheet to have similar style as main docs content.
-            File themeStylesheet = project.getRootProject().file("docs/src/theme/javadoc.css");
-            if (themeStylesheet.exists()) {
-                options.addFileOption("-add-stylesheet", themeStylesheet);
-            }
-
-            Provider<RegularFile> combinedScriptProvider = project.getLayout().getBuildDirectory().file("tmp/javadoc/tamboui-javadoc.js");
-            javadoc.doFirst(task -> {
-                File combinedScript = combinedScriptProvider.get().getAsFile();
-                combinedScript.getParentFile().mkdirs();
-
-                String repo = project.getProviders().gradleProperty("tamboui.githubRepo").orElse("tamboui/tamboui").get();
-                String ref = project.getProviders().gradleProperty("tamboui.githubRef").orElse("main").get();
-
-                File themeScript = project.getRootProject().file("docs/src/theme/javadoc-theme.js");
-                String themeContent = "";
-                if (themeScript.exists()) {
-                    try {
-                        themeContent = Files.readString(themeScript.toPath(), StandardCharsets.UTF_8);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to read " + themeScript, e);
-                    }
-                }
-
-                // For aggregated Javadoc we can't infer the Gradle module name from document.title.
-                // Generate a small mapping so the JS can build correct GitHub links.
+            // Configure theming with package-to-dir-path mapping for GitHub links
+            // For aggregated Javadoc we can't infer the Gradle module name from document.title,
+            // so we generate a small mapping that the JS can use to build correct GitHub links.
+            JavadocTheming.configure(javadoc, project, () -> {
                 List<Project> participantProjects = findParticipantProjects(project);
                 Map<String, String> packageToDirPath = computePackageToDirPath(participantProjects);
-                String pkgMapJson = toJsonObject(packageToDirPath);
-
-                String content =
-                        "window.__TAMBOUI_GITHUB_REPO=" + "'" + repo + "'" + ";\n" +
-                                "window.__TAMBOUI_GITHUB_REF=" + "'" + ref + "'" + ";\n" +
-                                "window.__TAMBOUI_GITHUB_PACKAGE_TO_DIR_PATH=" + pkgMapJson + ";\n" +
-                                themeContent;
-
-                try {
-                    Files.writeString(combinedScript.toPath(), content, StandardCharsets.UTF_8);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to write " + combinedScript, e);
-                }
+                return "window.__TAMBOUI_GITHUB_PACKAGE_TO_DIR_PATH=" + toJsonObject(packageToDirPath) + ";\n";
             });
-
-            options.addFileOption("-add-script", combinedScriptProvider.get().getAsFile());
         });
     }
 
@@ -153,7 +115,7 @@ public abstract class JavadocAggregatorPlugin implements Plugin<Project> {
 
     private static Map<String, String> computePackageToDirPath(List<Project> participantProjects) {
         Map<String, String> packageToDirPath = new LinkedHashMap<>();
-        Set<String> ambiguousPackages = new java.util.HashSet<>();
+        Set<String> ambiguousPackages = new HashSet<>();
 
         for (Project p : participantProjects) {
             File srcDir = new File(p.getProjectDir(), "src/main/java");
