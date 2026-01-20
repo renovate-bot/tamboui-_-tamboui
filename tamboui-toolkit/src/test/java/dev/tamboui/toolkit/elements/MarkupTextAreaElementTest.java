@@ -9,10 +9,13 @@ import dev.tamboui.css.engine.StyleEngine;
 import dev.tamboui.toolkit.element.DefaultRenderContext;
 import dev.tamboui.toolkit.element.ElementRegistry;
 import dev.tamboui.toolkit.element.RenderContext;
+import dev.tamboui.toolkit.element.StyledSpan;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
+import dev.tamboui.style.StyledAreaInfo;
+import dev.tamboui.style.StyledAreaRegistry;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.text.Text;
 import dev.tamboui.widgets.text.Overflow;
@@ -340,21 +343,24 @@ class MarkupTextAreaElementTest {
         // Create context with element registry
         DefaultRenderContext context = DefaultRenderContext.createEmpty();
 
-        // Render markup with custom tags
+        // Create styled area registry and configure frame
+        StyledAreaRegistry styledAreaRegistry = StyledAreaRegistry.create();
         Rect area = new Rect(0, 0, 50, 1);
         Buffer buffer = Buffer.empty(area);
         Frame frame = Frame.forTesting(buffer);
+        frame.setStyledAreaRegistry(styledAreaRegistry);
 
+        // Render markup with custom tags
         markupTextArea("[looping]animated[/looping] text")
             .render(frame, area, context);
 
-        // Query the registry for elements with the .looping class
-        ElementRegistry registry = context.elementRegistry();
-        List<ElementRegistry.ElementInfo> loopingElements = registry.queryAll(".looping");
+        // Query the styled area registry for spans with the "looping" tag
+        List<StyledAreaInfo> allAreas = styledAreaRegistry.all();
+        boolean hasLoopingTag = allAreas.stream()
+            .anyMatch(info -> info.tags().values().contains("looping"));
 
-        // Should have one element with the "looping" CSS class
-        assertThat(loopingElements).isNotEmpty();
-        assertThat(loopingElements.get(0).cssClasses()).contains("looping");
+        // Should have a styled area with the "looping" tag
+        assertThat(hasLoopingTag).isTrue();
     }
 
     @Test
@@ -363,21 +369,28 @@ class MarkupTextAreaElementTest {
         // Create context with element registry
         DefaultRenderContext context = DefaultRenderContext.createEmpty();
 
-        // Render markup with nested custom tags
+        // Create styled area registry and configure frame
+        StyledAreaRegistry styledAreaRegistry = StyledAreaRegistry.create();
         Rect area = new Rect(0, 0, 50, 1);
         Buffer buffer = Buffer.empty(area);
         Frame frame = Frame.forTesting(buffer);
+        frame.setStyledAreaRegistry(styledAreaRegistry);
 
+        // Render markup with nested custom tags
         markupTextArea("[effect1][effect2]styled[/effect2][/effect1]")
             .render(frame, area, context);
 
-        // Query the registry for elements with the .effect1 and .effect2 classes
-        ElementRegistry registry = context.elementRegistry();
-        List<ElementRegistry.ElementInfo> effect1Elements = registry.queryAll(".effect1");
-        List<ElementRegistry.ElementInfo> effect2Elements = registry.queryAll(".effect2");
+        // Query the styled area registry for spans with the effect tags
+        List<StyledAreaInfo> allAreas = styledAreaRegistry.all();
 
-        // Should have elements with both CSS classes
-        assertThat(effect1Elements).isNotEmpty();
-        assertThat(effect2Elements).isNotEmpty();
+        // With nested tags, the styled span should have both tags
+        boolean hasEffect1 = allAreas.stream()
+            .anyMatch(info -> info.tags().values().contains("effect1"));
+        boolean hasEffect2 = allAreas.stream()
+            .anyMatch(info -> info.tags().values().contains("effect2"));
+
+        // Should have styled areas with both CSS classes
+        assertThat(hasEffect1).isTrue();
+        assertThat(hasEffect2).isTrue();
     }
 }

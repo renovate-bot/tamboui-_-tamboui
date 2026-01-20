@@ -13,7 +13,6 @@ import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.toolkit.event.EventRouter;
 import dev.tamboui.toolkit.focus.FocusManager;
-import dev.tamboui.terminal.Frame;
 import dev.tamboui.toolkit.elements.ErrorPlaceholder;
 import dev.tamboui.tui.bindings.Bindings;
 import dev.tamboui.tui.bindings.BindingSets;
@@ -236,22 +235,35 @@ public final class DefaultRenderContext implements RenderContext {
 
     @Override
     public void renderChild(Element child, Frame frame, Rect area) {
-        if (faultTolerant) {
-            try {
+        // Push context key for styled area tracking
+        String childId = child.id();
+        if (childId != null) {
+            frame.pushContextKey(childId);
+        }
+
+        try {
+            if (faultTolerant) {
+                try {
+                    child.render(frame, area, this);
+                    registerElement(child, area);
+                } catch (Throwable t) {
+                    // Render error placeholder instead of the failed child
+                    ErrorPlaceholder placeholder = ErrorPlaceholder.from(t, child.id());
+                    try {
+                        placeholder.render(frame, area, this);
+                    } catch (Throwable ignored) {
+                        // Even the placeholder failed - nothing more we can do
+                    }
+                }
+            } else {
                 child.render(frame, area, this);
                 registerElement(child, area);
-            } catch (Throwable t) {
-                // Render error placeholder instead of the failed child
-                ErrorPlaceholder placeholder = ErrorPlaceholder.from(t, child.id());
-                try {
-                    placeholder.render(frame, area, this);
-                } catch (Throwable ignored) {
-                    // Even the placeholder failed - nothing more we can do
-                }
             }
-        } else {
-            child.render(frame, area, this);
-            registerElement(child, area);
+        } finally {
+            // Pop context key
+            if (childId != null) {
+                frame.popContextKey();
+            }
         }
     }
 

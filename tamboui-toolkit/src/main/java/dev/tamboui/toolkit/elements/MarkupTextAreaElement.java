@@ -7,15 +7,12 @@ package dev.tamboui.toolkit.elements;
 import dev.tamboui.css.cascade.CssStyleResolver;
 import dev.tamboui.layout.Alignment;
 import dev.tamboui.layout.Constraint;
-import dev.tamboui.layout.Layout;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Style;
-import dev.tamboui.style.Tags;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.MarkupParser;
-import dev.tamboui.text.Span;
 import dev.tamboui.text.Text;
 import dev.tamboui.toolkit.element.RenderContext;
 import dev.tamboui.toolkit.element.StyledElement;
@@ -28,22 +25,23 @@ import dev.tamboui.widgets.block.Block;
 import dev.tamboui.widgets.block.BorderType;
 import dev.tamboui.widgets.block.Borders;
 import dev.tamboui.widgets.block.Title;
+import dev.tamboui.widgets.paragraph.Paragraph;
 import dev.tamboui.widgets.scrollbar.Scrollbar;
 import dev.tamboui.widgets.scrollbar.ScrollbarOrientation;
 import dev.tamboui.widgets.scrollbar.ScrollbarState;
 import dev.tamboui.widgets.text.Overflow;
 import dev.tamboui.widgets.text.RichTextState;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
 /**
- * A toolkit element that parses BBCode-style markup and displays styled text as Elements.
+ * A toolkit element that parses BBCode-style markup and displays styled text.
  * <p>
- * This element parses markup and renders each styled segment as a separate {@link TextElement},
- * allowing TFX effects to target individual segments using CSS class selectors. Tag names
- * from the markup become CSS classes on the corresponding TextElements.
+ * This element parses markup into styled {@link Text} and renders it using the
+ * {@link Paragraph} widget. Custom tags in markup become CSS classes (via Tags),
+ * which are auto-registered in the StyledAreaRegistry when rendered, allowing
+ * TFX effects to target individual styled segments using CSS selectors.
  * <p>
  * Supported markup:
  * <ul>
@@ -51,8 +49,8 @@ import java.util.List;
  *       {@code [dim]}, {@code [reversed]}, {@code [crossed-out]}</li>
  *   <li>Built-in colors: {@code [red]}, {@code [green]}, {@code [blue]}, {@code [yellow]},
  *       {@code [cyan]}, {@code [magenta]}, {@code [white]}, {@code [black]}, {@code [gray]}</li>
- *   <li>Custom tags: unknown tags become CSS classes, e.g., {@code [looping]} becomes
- *       {@code addClass("looping")} on the TextElement</li>
+ *   <li>Custom tags: unknown tags become CSS classes stored as Tags in the span's Style,
+ *       e.g., {@code [highlight]} creates a span with tag "highlight"</li>
  *   <li>Escaped brackets: {@code [[} produces {@code [}, and {@code ]]} produces {@code ]}</li>
  *   <li>Nested tags: {@code [red][bold]text[/bold][/red]}</li>
  * </ul>
@@ -75,6 +73,7 @@ import java.util.List;
  * }</pre>
  *
  * @see MarkupParser for markup syntax details
+ * @see RichTextAreaElement for pre-styled Text rendering
  */
 public final class MarkupTextAreaElement extends StyledElement<MarkupTextAreaElement> {
 
@@ -597,8 +596,29 @@ public final class MarkupTextAreaElement extends StyledElement<MarkupTextAreaEle
             }
         }
 
-        // Build and render element-based content
-        renderElementBasedContent(frame, textContentArea, context, parsedLines, startLine, endLine);
+        // Create visible text for Paragraph (only the lines that should be visible)
+        Text visibleText;
+        if (startLine == 0 && endLine == parsedText.lines().size()) {
+            visibleText = parsedText;
+        } else {
+            visibleText = Text.from(parsedText.lines().subList(startLine, endLine));
+        }
+
+        // Build and render the Paragraph widget
+        Paragraph.Builder paragraphBuilder = Paragraph.builder()
+                .text(visibleText)
+                .style(context.currentStyle())
+                .styleResolver(styleResolver(context));
+
+        if (overflow != null) {
+            paragraphBuilder.overflow(overflow);
+        }
+        if (alignment != null) {
+            paragraphBuilder.alignment(alignment);
+        }
+
+        Paragraph paragraph = paragraphBuilder.build();
+        paragraph.render(textContentArea, frame.buffer());
 
         // Render scrollbar if needed
         boolean showScrollbar = scrollBarPolicy == ScrollBarPolicy.ALWAYS
@@ -633,331 +653,6 @@ public final class MarkupTextAreaElement extends StyledElement<MarkupTextAreaEle
             }
 
             frame.renderStatefulWidget(scrollbarBuilder.build(), scrollbarArea, scrollbarState);
-        }
-    }
-
-    /**
-     * Renders the parsed content as Element-based rendering.
-     * Each span becomes a TextElement with CSS classes for TFX targeting.
-     */
-    private void renderElementBasedContent(Frame frame,
-                                           Rect area,
-                                           RenderContext context,
-                                           List<Line> parsedLines,
-                                           int startLine,
-                                           int endLine) {
-        if (area.isEmpty()) {
-            return;
-        }
-
-        // For word wrapping modes, we need to handle wrapping across the visible lines
-        if (overflow == Overflow.WRAP_WORD || overflow == Overflow.WRAP_CHARACTER) {
-            renderWrappedContent(frame, area, context, parsedLines, startLine, endLine);
-            return;
-        }
-
-        // Calculate heights for visible lines
-        int[] heights = new int[endLine - startLine];
-        for (int i = 0; i < heights.length; i++) {
-            heights[i] = 1; // Each line takes 1 row
-        }
-
-        // Split area vertically for each visible line
-        Constraint[] constraints = new Constraint[heights.length];
-        for (int i = 0; i < heights.length; i++) {
-            constraints[i] = Constraint.length(heights[i]);
-        }
-
-        List<Rect> lineAreas = Layout.vertical()
-            .constraints(constraints)
-            .split(area);
-
-        // Render each visible line
-        for (int i = 0; i < lineAreas.size() && (startLine + i) < endLine; i++) {
-            int lineIndex = startLine + i;
-            Line line = parsedLines.get(lineIndex);
-            Rect lineArea = lineAreas.get(i);
-
-            renderLine(frame, lineArea, context, line);
-        }
-    }
-
-    /**
-     * Renders content with word wrapping support.
-     */
-    private void renderWrappedContent(Frame frame,
-                                      Rect area,
-                                      RenderContext context,
-                                      List<Line> parsedLines,
-                                      int startLine,
-                                      int endLine) {
-        if (area.isEmpty()) {
-            return;
-        }
-
-        int availableWidth = area.width();
-        int currentY = area.top();
-        int maxY = area.top() + area.height();
-
-        // Process each visible source line
-        for (int lineIndex = startLine; lineIndex < endLine && currentY < maxY; lineIndex++) {
-            Line line = parsedLines.get(lineIndex);
-
-            // Break the line into wrapped spans
-            List<List<WrappedSpan>> wrappedRows = wrapLine(line, availableWidth);
-
-            // Render each wrapped row
-            for (List<WrappedSpan> row : wrappedRows) {
-                if (currentY >= maxY) {
-                    break;
-                }
-
-                Rect rowArea = new Rect(area.left(), currentY, availableWidth, 1);
-                renderWrappedRow(frame, rowArea, context, row);
-                currentY++;
-            }
-        }
-    }
-
-    /**
-     * Wraps a line's spans to fit within the given width.
-     * Returns a list of rows, each row being a list of wrapped spans.
-     */
-    private List<List<WrappedSpan>> wrapLine(Line line, int maxWidth) {
-        List<List<WrappedSpan>> rows = new ArrayList<>();
-        List<WrappedSpan> currentRow = new ArrayList<>();
-        int currentWidth = 0;
-
-        for (Span span : line.spans()) {
-            String text = span.content();
-            Tags tags = span.style().extension(Tags.class, Tags.empty());
-
-            if (overflow == Overflow.WRAP_WORD) {
-                // Word wrapping: break at word boundaries
-                int start = 0;
-                while (start < text.length()) {
-                    // Find the next word boundary
-                    int wordEnd = start;
-                    while (wordEnd < text.length() && !Character.isWhitespace(text.charAt(wordEnd))) {
-                        wordEnd++;
-                    }
-
-                    // Include trailing whitespace with the word
-                    int spanEnd = wordEnd;
-                    while (spanEnd < text.length() && Character.isWhitespace(text.charAt(spanEnd))) {
-                        spanEnd++;
-                    }
-
-                    String wordWithSpace = text.substring(start, spanEnd);
-                    int wordWidth = wordWithSpace.length();
-
-                    // Check if we need to wrap
-                    if (currentWidth + wordWidth > maxWidth && currentWidth > 0) {
-                        // Trim trailing spaces from current row before wrapping
-                        trimTrailingSpaces(currentRow);
-                        rows.add(currentRow);
-                        currentRow = new ArrayList<>();
-                        currentWidth = 0;
-                    }
-
-                    // Add the word to current row (trim leading spaces if at start of line)
-                    if (currentWidth == 0) {
-                        wordWithSpace = trimLeadingSpaces(wordWithSpace);
-                        wordWidth = wordWithSpace.length();
-                    }
-
-                    if (!wordWithSpace.isEmpty()) {
-                        currentRow.add(new WrappedSpan(wordWithSpace, tags, span.style()));
-                        currentWidth += wordWidth;
-                    }
-
-                    start = spanEnd;
-                }
-            } else {
-                // Character wrapping: break at character boundaries
-                int start = 0;
-                while (start < text.length()) {
-                    int remaining = maxWidth - currentWidth;
-                    if (remaining <= 0) {
-                        rows.add(currentRow);
-                        currentRow = new ArrayList<>();
-                        currentWidth = 0;
-                        remaining = maxWidth;
-                    }
-
-                    int chunkEnd = Math.min(start + remaining, text.length());
-                    String chunk = text.substring(start, chunkEnd);
-                    currentRow.add(new WrappedSpan(chunk, tags, span.style()));
-                    currentWidth += chunk.length();
-                    start = chunkEnd;
-                }
-            }
-        }
-
-        // Add any remaining content
-        if (!currentRow.isEmpty()) {
-            trimTrailingSpaces(currentRow);
-            rows.add(currentRow);
-        }
-
-        // Ensure at least one empty row for empty lines
-        if (rows.isEmpty()) {
-            rows.add(new ArrayList<>());
-        }
-
-        return rows;
-    }
-
-    private String trimLeadingSpaces(String s) {
-        int i = 0;
-        while (i < s.length() && Character.isWhitespace(s.charAt(i))) {
-            i++;
-        }
-        return s.substring(i);
-    }
-
-    private void trimTrailingSpaces(List<WrappedSpan> row) {
-        if (row.isEmpty()) {
-            return;
-        }
-        // Trim trailing spaces from the last span
-        WrappedSpan last = row.get(row.size() - 1);
-        String text = last.text;
-        int end = text.length();
-        while (end > 0 && Character.isWhitespace(text.charAt(end - 1))) {
-            end--;
-        }
-        if (end < text.length()) {
-            if (end == 0) {
-                row.remove(row.size() - 1);
-                trimTrailingSpaces(row); // Recurse to trim next span
-            } else {
-                row.set(row.size() - 1, new WrappedSpan(text.substring(0, end), last.tags, last.style));
-            }
-        }
-    }
-
-    /**
-     * Renders a wrapped row of spans.
-     */
-    private void renderWrappedRow(Frame frame, Rect area, RenderContext context, List<WrappedSpan> row) {
-        if (area.isEmpty()) {
-            return;
-        }
-
-        int currentX = area.left();
-        for (WrappedSpan wrappedSpan : row) {
-            int spanWidth = wrappedSpan.text.length();
-            int availableWidth = area.right() - currentX;
-            if (availableWidth <= 0) {
-                break;
-            }
-
-            String text = wrappedSpan.text;
-            if (spanWidth > availableWidth) {
-                text = text.substring(0, availableWidth);
-                spanWidth = text.length();
-            }
-
-            Rect spanArea = new Rect(currentX, area.top(), spanWidth, 1);
-
-            TextElement textElement = new TextElement(text);
-            textElement.style(wrappedSpan.style);
-
-            for (String tag : wrappedSpan.tags.values()) {
-                textElement.addClass(tag);
-            }
-
-            textElement.fit();
-            context.renderChild(textElement, frame, spanArea);
-
-            currentX += spanWidth;
-        }
-    }
-
-    /**
-     * Helper class to represent a wrapped span with its metadata.
-     */
-    private static class WrappedSpan {
-        final String text;
-        final Tags tags;
-        final Style style;
-
-        WrappedSpan(String text, Tags tags, Style style) {
-            this.text = text;
-            this.tags = tags;
-            this.style = style;
-        }
-    }
-
-    /**
-     * Renders a single parsed line as a row of TextElements.
-     */
-    private void renderLine(Frame frame, Rect area, RenderContext context, Line line) {
-        if (area.isEmpty() || line.spans().isEmpty()) {
-            return;
-        }
-
-        // For alignment support, calculate total line width
-        int totalWidth = 0;
-        for (Span span : line.spans()) {
-            totalWidth += span.content().length();
-        }
-
-        // Calculate starting x position based on alignment
-        int startX = area.left();
-        if (alignment == Alignment.CENTER && totalWidth < area.width()) {
-            startX = area.left() + (area.width() - totalWidth) / 2;
-        } else if (alignment == Alignment.RIGHT && totalWidth < area.width()) {
-            startX = area.left() + area.width() - totalWidth;
-        }
-
-        // Render each span as a TextElement
-        int currentX = startX;
-        for (Span span : line.spans()) {
-            String text = span.content();
-            int spanWidth = text.length();
-
-            // Check if span fits in remaining space
-            int availableWidth = area.right() - currentX;
-            if (availableWidth <= 0) {
-                break;
-            }
-
-            // Handle overflow/truncation
-            if (spanWidth > availableWidth) {
-                if (overflow == Overflow.ELLIPSIS) {
-                    if (availableWidth >= 3) {
-                        text = text.substring(0, availableWidth - 3) + "...";
-                    } else {
-                        text = text.substring(0, availableWidth);
-                    }
-                } else {
-                    text = text.substring(0, availableWidth);
-                }
-                spanWidth = text.length();
-            }
-
-            // Create area for this span
-            Rect spanArea = new Rect(currentX, area.top(), spanWidth, 1);
-
-            // Create TextElement with CSS classes from tags
-            TextElement textElement = new TextElement(text);
-            textElement.style(span.style());
-
-            // Add tag names as CSS classes
-            Tags tags = span.style().extension(Tags.class, Tags.empty());
-            for (String tag : tags.values()) {
-                textElement.addClass(tag);
-            }
-
-            // Use fit constraint for inline rendering
-            textElement.fit();
-
-            // Render the element
-            context.renderChild(textElement, frame, spanArea);
-
-            currentX += spanWidth;
         }
     }
 
