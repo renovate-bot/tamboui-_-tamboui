@@ -20,12 +20,15 @@ import java.time.Duration;
  * <p>
  * ToolkitEffects provides a simple interface for adding effects to elements
  * by ID, with automatic resolution of element areas during rendering.
+ * Effects automatically follow their target elements when the terminal resizes
+ * because areas are looked up dynamically each frame.
  * <p>
  * <b>Design Philosophy:</b>
  * <ul>
  *   <li><b>Element-targeted:</b> Effects can target specific elements by ID</li>
  *   <li><b>Non-invasive:</b> Uses wrapper pattern like FpsOverlay</li>
  *   <li><b>Automatic timing:</b> Uses TickEvent elapsed time for consistency</li>
+ *   <li><b>Resize-safe:</b> Effects follow elements automatically on resize</li>
  * </ul>
  * <p>
  * <b>Usage with ToolkitRunner:</b>
@@ -60,34 +63,15 @@ import java.time.Duration;
  */
 public final class ToolkitEffects {
 
-    private final ElementEffectRegistry registry = new ElementEffectRegistry();
-    private Duration lastElapsed = Duration.ZERO;
-    private int lastFrameWidth;
-    private int lastFrameHeight;
+    private final ElementEffectRegistry registry;
+    private Duration lastElapsed;
 
     /**
      * Creates a new ToolkitEffects instance.
-     * <p>
-     * When used with {@link #asPostRenderProcessor()}, the ElementRegistry
-     * is automatically provided by the ToolkitRunner on first render.
-     * <p>
-     * When used with TuiRunner via {@link #wrapHandler(EventHandler)} and
-     * {@link #wrapRenderer(Renderer)}, call {@link #setElementRegistry(ElementRegistry)}
-     * before running.
      */
     public ToolkitEffects() {
-    }
-
-    /**
-     * Sets the ElementRegistry used to resolve element areas.
-     * <p>
-     * This is called automatically when using {@link #asPostRenderProcessor()}
-     * with ToolkitRunner. Only call this manually when using TuiRunner directly.
-     *
-     * @param elementRegistry the element registry
-     */
-    public void setElementRegistry(ElementRegistry elementRegistry) {
-        registry.setElementRegistry(elementRegistry);
+        this.registry = new ElementEffectRegistry();
+        this.lastElapsed = Duration.ZERO;
     }
 
     /**
@@ -175,20 +159,6 @@ public final class ToolkitEffects {
     }
 
     /**
-     * Requests a refresh of effect areas after a resize or relayout.
-     * <p>
-     * Call this method when the terminal is resized or elements have been
-     * repositioned. The actual refresh happens on the next render cycle,
-     * ensuring the ElementRegistry has up-to-date data.
-     * <p>
-     * In ToolkitRunner with {@link #asPostRenderProcessor()}, this is called
-     * automatically on resize events.
-     */
-    public void requestRefresh() {
-        registry.requestRefresh();
-    }
-
-    /**
      * Wraps an event handler to capture tick timing and force redraws.
      * <p>
      * The wrapper:
@@ -225,25 +195,26 @@ public final class ToolkitEffects {
      * The wrapper:
      * <ul>
      *   <li>Calls the wrapped renderer first</li>
-     *   <li>Resolves pending effects to element areas</li>
-     *   <li>Processes all active effects on the buffer</li>
+     *   <li>Expands pending selector effects to element instances</li>
+     *   <li>Processes all active effects on the buffer with dynamic area lookup</li>
      * </ul>
      *
-     * @param renderer the renderer to wrap
+     * @param renderer        the renderer to wrap
+     * @param elementRegistry the element registry containing element areas
      * @return a wrapped renderer
      */
-    public Renderer wrapRenderer(Renderer renderer) {
+    public Renderer wrapRenderer(Renderer renderer, ElementRegistry elementRegistry) {
         return frame -> {
             // Render the UI first
             renderer.render(frame);
 
-            // Resolve pending effects to element areas
-            registry.resolvePendingEffects();
+            // Expand pending selector effects
+            registry.expandSelectors(elementRegistry);
 
-            // Process effects on the buffer
+            // Process effects on the buffer with dynamic area lookup
             if (registry.isRunning()) {
                 TFxDuration delta = TFxDuration.fromJavaDuration(lastElapsed);
-                registry.processEffects(delta, frame.buffer(), frame.area());
+                registry.processEffects(delta, frame.buffer(), frame.area(), elementRegistry);
             }
         };
     }
@@ -251,11 +222,10 @@ public final class ToolkitEffects {
     /**
      * Creates a post-render processor for use with ToolkitRunner.Builder.
      * <p>
-     * This returns a processor that resolves pending effects to element areas
-     * and processes all active effects on the buffer. The processor receives
-     * elapsed time from ToolkitRunner, so no event handler wrapping is needed.
-     * <p>
-     * On resize, effect areas are automatically refreshed to match new element positions.
+     * This returns a processor that expands pending selector effects and
+     * processes all active effects on the buffer. Areas are looked up dynamically
+     * from the element registry each frame, so effects automatically follow
+     * elements when the terminal resizes.
      * <p>
      * <b>Usage:</b>
      * <pre>{@code
@@ -273,30 +243,13 @@ public final class ToolkitEffects {
      */
     public ToolkitPostRenderProcessor asPostRenderProcessor() {
         return (frame, elementRegistry, elapsed) -> {
-            // Set the registry on first call (or if it changed)
-            registry.setElementRegistry(elementRegistry);
+            // Expand pending selector effects
+            registry.expandSelectors(elementRegistry);
 
-            // Detect frame size changes (resize events) and request refresh
-            int currentWidth = frame.area().width();
-            int currentHeight = frame.area().height();
-            boolean resized = (lastFrameWidth != 0 || lastFrameHeight != 0)
-                    && (currentWidth != lastFrameWidth || currentHeight != lastFrameHeight);
-
-            if (resized) {
-                registry.requestRefresh();
-            }
-
-            // Update tracked frame size
-            lastFrameWidth = currentWidth;
-            lastFrameHeight = currentHeight;
-
-            // Resolve pending effects (and handle refresh if requested)
-            registry.resolvePendingEffects();
-
-            // Process effects on the buffer
+            // Process effects on the buffer with dynamic area lookup
             if (registry.isRunning()) {
                 TFxDuration delta = TFxDuration.fromJavaDuration(elapsed);
-                registry.processEffects(delta, frame.buffer(), frame.area());
+                registry.processEffects(delta, frame.buffer(), frame.area(), elementRegistry);
             }
         };
     }

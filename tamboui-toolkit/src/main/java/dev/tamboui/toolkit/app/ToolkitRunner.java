@@ -30,7 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
@@ -79,7 +78,6 @@ public final class ToolkitRunner implements AutoCloseable {
     private final ElementRegistry elementRegistry;
     private final DefaultRenderContext renderContext;
     private final ScheduledExecutorService scheduler;
-    private final ReentrantLock renderLock = new ReentrantLock();
     private final boolean faultTolerant;
     private final List<ToolkitPostRenderProcessor> postRenderProcessors;
     private volatile Duration lastElapsed = Duration.ZERO;
@@ -147,34 +145,29 @@ public final class ToolkitRunner implements AutoCloseable {
         tuiRunner.run(
             (event, runner) -> handleEvent(event),
             frame -> {
-                // Synchronize rendering to prevent concurrent access from scheduler thread
-                renderLock.lock();
-                try {
-                    // Clear state before each render
-                    focusManager.clearFocusables();
-                    eventRouter.clear();
-                    elementRegistry.clear();
+                // All rendering now happens on render thread - no lock needed
+                // Clear state before each render
+                focusManager.clearFocusables();
+                eventRouter.clear();
+                elementRegistry.clear();
 
-                    // Get the current element tree
-                    Element root = elementSupplier.get();
+                // Get the current element tree
+                Element root = elementSupplier.get();
 
-                    // Render the element tree and register root for events
-                    if (root != null) {
-                        root.render(frame, frame.area(), renderContext);
-                        renderContext.registerElement(root, frame.area());
-                    }
+                // Render the element tree and register root for events
+                if (root != null) {
+                    root.render(frame, frame.area(), renderContext);
+                    renderContext.registerElement(root, frame.area());
+                }
 
-                    // Auto-focus first focusable element if nothing is focused
-                    if (focusManager.focusedId() == null && !focusManager.focusOrder().isEmpty()) {
-                        focusManager.setFocus(focusManager.focusOrder().get(0));
-                    }
+                // Auto-focus first focusable element if nothing is focused
+                if (focusManager.focusedId() == null && !focusManager.focusOrder().isEmpty()) {
+                    focusManager.setFocus(focusManager.focusOrder().get(0));
+                }
 
-                    // Apply post-render processors (e.g., effects, overlays)
-                    for (ToolkitPostRenderProcessor processor : postRenderProcessors) {
-                        processor.process(frame, elementRegistry, lastElapsed);
-                    }
-                } finally {
-                    renderLock.unlock();
+                // Apply post-render processors (e.g., effects, overlays)
+                for (ToolkitPostRenderProcessor processor : postRenderProcessors) {
+                    processor.process(frame, elementRegistry, lastElapsed);
                 }
             }
         );
@@ -230,13 +223,14 @@ public final class ToolkitRunner implements AutoCloseable {
     /**
      * Schedules an action to run after a delay.
      * <p>
-     * The action runs on a background thread. If the action modifies shared state,
-     * ensure proper synchronization. The UI will automatically redraw on the next
-     * tick event after the action completes.
+     * The action runs on the scheduler thread. If the action modifies UI state,
+     * use {@link #runOnRenderThread(Runnable)} to ensure thread safety:
      *
      * <pre>{@code
      * runner.schedule(() -> {
-     *     message = "Delayed message!";
+     *     runner.runOnRenderThread(() -> {
+     *         message = "Delayed message!";
+     *     });
      * }, Duration.ofSeconds(2));
      * }</pre>
      *
@@ -252,13 +246,12 @@ public final class ToolkitRunner implements AutoCloseable {
     /**
      * Schedules an action to run repeatedly at a fixed interval.
      * <p>
-     * The action runs on a background thread. If the action modifies shared state,
-     * ensure proper synchronization. The UI will automatically redraw on each
-     * tick event.
+     * The action runs on the scheduler thread. If the action modifies UI state,
+     * use {@link #runOnRenderThread(Runnable)} to ensure thread safety.
      *
      * <pre>{@code
      * var repeating = runner.scheduleRepeating(() -> {
-     *     counter++;
+     *     runner.runOnRenderThread(() -> counter++);
      * }, Duration.ofMillis(100));
      *
      * // Later, to stop:
@@ -281,6 +274,9 @@ public final class ToolkitRunner implements AutoCloseable {
      * Unlike {@link #scheduleRepeating}, this waits for each execution to complete
      * before scheduling the next one. This is useful when the action's duration
      * is unpredictable and you want consistent spacing between runs.
+     * <p>
+     * The action runs on the scheduler thread. If the action modifies UI state,
+     * use {@link #runOnRenderThread(Runnable)} to ensure thread safety.
      *
      * @param action the action to run
      * @param delay the delay between the end of one run and the start of the next
@@ -342,6 +338,26 @@ public final class ToolkitRunner implements AutoCloseable {
      */
     public EventRouter eventRouter() {
         return eventRouter;
+    }
+
+    /**
+     * Executes an action on the render thread.
+     * <p>
+     * Delegates to {@link TuiRunner#runOnRenderThread(Runnable)}.
+     *
+     * @param action the action to execute on the render thread
+     */
+    public void runOnRenderThread(Runnable action) {
+        tuiRunner.runOnRenderThread(action);
+    }
+
+    /**
+     * Returns whether the current thread is the render thread.
+     *
+     * @return true if called from the render thread
+     */
+    public boolean isRenderThread() {
+        return tuiRunner.isRenderThread();
     }
 
     /**

@@ -10,6 +10,8 @@ import dev.tamboui.css.selector.Selector;
 import dev.tamboui.css.selector.SelectorParser;
 import dev.tamboui.layout.Rect;
 
+import dev.tamboui.tui.RenderThread;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Registry that maps elements to their rendered areas with full CSS selector support.
@@ -67,9 +68,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public final class ElementRegistry {
 
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
     private final Map<String, ElementInfo> elementsById = new HashMap<>();
     private final List<ElementInfo> allElements = new ArrayList<>();
 
@@ -179,6 +177,8 @@ public final class ElementRegistry {
 
     /**
      * Registers an element with full information including parent.
+     * <p>
+     * Must be called from the render thread.
      *
      * @param elementId  the element ID (may be null)
      * @param type       the element type name
@@ -189,18 +189,14 @@ public final class ElementRegistry {
      */
     public void register(String elementId, String type, Set<String> cssClasses,
                          Map<String, String> attributes, Rect area, ElementInfo parent) {
+        RenderThread.checkRenderThread();
         if (area == null) {
             return;
         }
-        writeLock.lock();
-        try {
-            ElementInfo info = new ElementInfo(elementId, type, cssClasses, attributes, area, parent);
-            allElements.add(info);
-            if (elementId != null) {
-                elementsById.put(elementId, info);
-            }
-        } finally {
-            writeLock.unlock();
+        ElementInfo info = new ElementInfo(elementId, type, cssClasses, attributes, area, parent);
+        allElements.add(info);
+        if (elementId != null) {
+            elementsById.put(elementId, info);
         }
     }
 
@@ -240,7 +236,6 @@ public final class ElementRegistry {
             return Optional.empty();
         }
 
-        readLock.lock();
         try {
             Selector parsed = SelectorParser.parse(selector);
 
@@ -263,8 +258,6 @@ public final class ElementRegistry {
             }
         } catch (IllegalArgumentException e) {
             // Invalid selector, return empty
-        } finally {
-            readLock.unlock();
         }
         return Optional.empty();
     }
@@ -293,7 +286,6 @@ public final class ElementRegistry {
             return Collections.emptyList();
         }
 
-        readLock.lock();
         try {
             Selector parsed = SelectorParser.parse(selector);
             List<ElementInfo> results = new ArrayList<>();
@@ -307,8 +299,6 @@ public final class ElementRegistry {
         } catch (IllegalArgumentException e) {
             // Invalid selector, return empty
             return Collections.emptyList();
-        } finally {
-            readLock.unlock();
         }
     }
 
@@ -324,13 +314,8 @@ public final class ElementRegistry {
         if (elementId == null) {
             return null;
         }
-        readLock.lock();
-        try {
-            ElementInfo info = elementsById.get(elementId);
-            return info != null ? info.area : null;
-        } finally {
-            readLock.unlock();
-        }
+        ElementInfo info = elementsById.get(elementId);
+        return info != null ? info.area : null;
     }
 
     /**
@@ -343,27 +328,19 @@ public final class ElementRegistry {
         if (elementId == null) {
             return false;
         }
-        readLock.lock();
-        try {
-            return elementsById.containsKey(elementId);
-        } finally {
-            readLock.unlock();
-        }
+        return elementsById.containsKey(elementId);
     }
 
     /**
      * Clears all registered elements.
      * <p>
      * Should be called at the start of each render cycle.
+     * Must be called from the render thread.
      */
     public void clear() {
-        writeLock.lock();
-        try {
-            elementsById.clear();
-            allElements.clear();
-        } finally {
-            writeLock.unlock();
-        }
+        RenderThread.checkRenderThread();
+        elementsById.clear();
+        allElements.clear();
     }
 
     /**
@@ -372,11 +349,6 @@ public final class ElementRegistry {
      * @return the count
      */
     public int size() {
-        readLock.lock();
-        try {
-            return allElements.size();
-        } finally {
-            readLock.unlock();
-        }
+        return allElements.size();
     }
 }
