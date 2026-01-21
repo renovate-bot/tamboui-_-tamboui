@@ -99,6 +99,20 @@ public final class InlineDisplay implements AutoCloseable {
      */
     public static InlineDisplay create(int height, int width) throws IOException {
         Backend backend = BackendFactory.create();
+        return withBackend(height, width, backend);
+    }
+
+    /**
+     * Creates an InlineDisplay using an existing backend. The InlineDisplay will not take ownership
+     * of the backend; callers should avoid invoking {@link #close()} and instead call {@link #release()}.
+     *
+     * @param height the number of lines to reserve for the display area
+     * @param width  the width of the display area in characters
+     * @param backend the backend to use for output
+     * @return a new InlineDisplay
+     * @throws IOException if initialization fails
+     */
+    public static InlineDisplay withBackend(int height, int width, Backend backend) throws IOException {
         PrintWriter out = createPrintWriter(backend);
         return new InlineDisplay(height, width, backend, out);
     }
