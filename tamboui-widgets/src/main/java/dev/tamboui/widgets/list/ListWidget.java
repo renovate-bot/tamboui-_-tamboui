@@ -19,6 +19,7 @@ import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardProperties;
 import dev.tamboui.style.Style;
 import dev.tamboui.style.Width;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.widget.StatefulWidget;
@@ -298,11 +299,15 @@ public final class ListWidget implements StatefulWidget<ListState> {
             }
 
             String content = span.content();
-            if (content.length() <= remainingWidth) {
+            int contentWidth = CharWidth.of(content);
+            if (contentWidth <= remainingWidth) {
                 clippedSpans.add(span);
-                remainingWidth -= content.length();
+                remainingWidth -= contentWidth;
             } else {
-                clippedSpans.add(new Span(content.substring(0, remainingWidth), span.style()));
+                String clipped = CharWidth.substringByWidth(content, remainingWidth);
+                if (!clipped.isEmpty()) {
+                    clippedSpans.add(new Span(clipped, span.style()));
+                }
                 break;
             }
         }
@@ -313,7 +318,7 @@ public final class ListWidget implements StatefulWidget<ListState> {
     private enum EllipsisPosition { START, MIDDLE, END }
 
     private Line truncateWithEllipsis(Line line, int maxWidth, EllipsisPosition position) {
-        if (maxWidth <= ELLIPSIS.length()) {
+        if (maxWidth <= CharWidth.of(ELLIPSIS)) {
             // Not enough room for ellipsis, just clip
             return clipLine(line, maxWidth);
         }
@@ -340,20 +345,20 @@ public final class ListWidget implements StatefulWidget<ListState> {
     }
 
     private String truncateEnd(String text, int maxWidth) {
-        int availableChars = maxWidth - ELLIPSIS.length();
-        return text.substring(0, availableChars) + ELLIPSIS;
+        int availableWidth = maxWidth - CharWidth.of(ELLIPSIS);
+        return CharWidth.substringByWidth(text, availableWidth) + ELLIPSIS;
     }
 
     private String truncateStart(String text, int maxWidth) {
-        int availableChars = maxWidth - ELLIPSIS.length();
-        return ELLIPSIS + text.substring(text.length() - availableChars);
+        int availableWidth = maxWidth - CharWidth.of(ELLIPSIS);
+        return ELLIPSIS + CharWidth.substringByWidthFromEnd(text, availableWidth);
     }
 
     private String truncateMiddle(String text, int maxWidth) {
-        int availableChars = maxWidth - ELLIPSIS.length();
-        int leftChars = (availableChars + 1) / 2;
-        int rightChars = availableChars / 2;
-        return text.substring(0, leftChars) + ELLIPSIS + text.substring(text.length() - rightChars);
+        int availableWidth = maxWidth - CharWidth.of(ELLIPSIS);
+        int leftWidth = (availableWidth + 1) / 2;
+        int rightWidth = availableWidth / 2;
+        return CharWidth.substringByWidth(text, leftWidth) + ELLIPSIS + CharWidth.substringByWidthFromEnd(text, rightWidth);
     }
 
     private String lineToString(Line line) {

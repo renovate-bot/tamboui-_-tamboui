@@ -345,6 +345,171 @@ When defining your own properties:
 
 Most widget-specific properties should be non-inheritable because they control aspects unique to that widget type.
 
+== Unicode and Display Width Handling
+
+Terminal display width differs from Java string length.
+Always use `CharWidth` utilities for width calculations when rendering text.
+
+=== The Problem
+
+Java's `String.length()` returns the number of UTF-16 code units, not terminal display columns:
+
+|===
+| Type | Example | `length()` | Display Width
+
+| ASCII | "A" | 1 | 1
+| CJK | "世" | 1 | 2
+| Simple Emoji | "🔥" | 2 | 2
+| ZWJ Emoji | "👨‍🦲" | 5 | 2
+| Flag Emoji | "🇬🇱" | 4 | 2
+|===
+
+Using `length()` or `substring()` for display calculations causes:
+
+* ZWJ emoji like "👨‍🦲" to display as "👨?" (truncated mid-sequence)
+* CJK characters to overflow cells (width 2 treated as width 1)
+* Incorrect cursor positioning and alignment
+
+=== CharWidth Utilities
+
+The `CharWidth` class provides display-width-aware string operations:
+
+[source,java]
+----
+import dev.tamboui.text.CharWidth;
+
+// Get display width of a string
+int width = CharWidth.of("Hello 世界 🔥");  // Returns 14, not 11
+
+// Get display width of a code point
+int cpWidth = CharWidth.of(0x4E16);  // Returns 2 (CJK character)
+
+// Truncate to fit display width (preserves grapheme clusters)
+String truncated = CharWidth.substringByWidth("Hello 👨‍🦲 World", 8);  // "Hello 👨‍🦲"
+
+// Truncate from the end
+String suffix = CharWidth.substringByWidthFromEnd("Hello World", 5);  // "World"
+
+// Truncate with ellipsis
+String ellipsized = CharWidth.truncateWithEllipsis(
+    "Very long text here",
+    10,
+    CharWidth.TruncatePosition.END
+);  // "Very lo..."
+----
+
+=== Common Patterns
+
+==== Width Calculation
+
+[source,java]
+----
+// WRONG - breaks emoji and CJK
+int width = text.length();
+
+// CORRECT - respects display width
+int width = CharWidth.of(text);
+----
+
+==== Text Truncation
+
+[source,java]
+----
+// WRONG - may break mid-grapheme cluster
+String truncated = text.substring(0, maxWidth);
+
+// CORRECT - preserves grapheme boundaries
+String truncated = CharWidth.substringByWidth(text, maxWidth);
+----
+
+==== Position Tracking
+
+[source,java]
+----
+// WRONG - position drift with wide characters
+int col = x;
+buffer.setString(col, y, text, style);
+col += text.length();
+
+// CORRECT - use display width
+int col = x;
+buffer.setString(col, y, text, style);
+col += CharWidth.of(text);
+----
+
+==== Centering Text
+
+[source,java]
+----
+// WRONG - misaligned with CJK/emoji
+int labelX = x + (width - label.length()) / 2;
+
+// CORRECT - proper centering
+int labelX = x + (width - CharWidth.of(label)) / 2;
+----
+
+==== Truncation with Ellipsis
+
+[source,java]
+----
+// WRONG - char count, not display width
+if (text.length() > maxWidth) {
+    text = text.substring(0, maxWidth - 3) + "...";
+}
+
+// CORRECT - using CharWidth utilities
+text = CharWidth.truncateWithEllipsis(text, maxWidth, CharWidth.TruncatePosition.END);
+
+// Or manually:
+if (CharWidth.of(text) > maxWidth) {
+    int ellipsisWidth = CharWidth.of("...");
+    text = CharWidth.substringByWidth(text, maxWidth - ellipsisWidth) + "...";
+}
+----
+
+=== Ellipsis Truncation Positions
+
+`CharWidth.truncateWithEllipsis()` supports three positions:
+
+[source,java]
+----
+String text = "Hello World Example";
+
+// END: "Hello Wor..."
+CharWidth.truncateWithEllipsis(text, 12, CharWidth.TruncatePosition.END);
+
+// START: "...d Example"
+CharWidth.truncateWithEllipsis(text, 12, CharWidth.TruncatePosition.START);
+
+// MIDDLE: "Hell...ample"
+CharWidth.truncateWithEllipsis(text, 12, CharWidth.TruncatePosition.MIDDLE);
+----
+
+You can also use a custom ellipsis string:
+
+[source,java]
+----
+CharWidth.truncateWithEllipsis(text, 12, "…", CharWidth.TruncatePosition.END);
+----
+
+=== ZWJ Sequence Safety
+
+Zero-Width Joiner (ZWJ) sequences combine multiple code points into a single visible glyph.
+`CharWidth.substringByWidth()` automatically preserves these sequences:
+
+[source,java]
+----
+// "👨‍🦲" is: man (👨) + ZWJ + bald (🦲) = 5 code units, 2 display columns
+
+// Safe truncation - won't break mid-sequence
+String result = CharWidth.substringByWidth("A👨‍🦲B", 3);
+// Returns "A👨‍🦲" (width 3), not "A👨" (broken sequence showing "?")
+----
+
+=== Reference Implementation
+
+See `Paragraph.java` for a complete example of correct CharWidth usage in a widget that handles text wrapping and truncation.
+
 == Best Practices
 
 === Widget Design
@@ -353,6 +518,7 @@ Most widget-specific properties should be non-inheritable because they control a
 * Use the builder pattern for complex configuration
 * Respect the provided `Rect` bounds
 * Handle edge cases (empty area, no data)
+* Always use `CharWidth` for text width calculations (see <<Unicode and Display Width Handling>>)
 
 === Performance
 
@@ -379,3 +545,5 @@ For more details, explore the source code:
 * `tamboui-widgets/src/main/java/dev/tamboui/widgets/` - Widget implementations
 * `tamboui-toolkit/src/main/java/dev/tamboui/toolkit/` - Toolkit components
 * `tamboui-core/src/main/java/dev/tamboui/buffer/` - Buffer and Cell
+* `tamboui-core/src/main/java/dev/tamboui/text/CharWidth.java` - Unicode display width utilities
+* `tamboui-widgets/src/main/java/dev/tamboui/widgets/paragraph/Paragraph.java` - Reference implementation for CharWidth usage

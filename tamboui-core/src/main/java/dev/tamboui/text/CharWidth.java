@@ -51,11 +51,12 @@ public final class CharWidth {
 
     // Sorted start/end values of supplementary plane zero-width ranges
     private static final int[] SUPPLEMENTARY_ZERO_STARTS = {
+            0x1F3FB, // Emoji Modifier Fitzpatrick Type-1-2 through Type-6 (skin tones)
             0xE0001, // Tags
             0xE0100, // Variation Selectors Supplement (VS17-VS256)
     };
     private static final int[] SUPPLEMENTARY_ZERO_ENDS = {
-            0xE007F, 0xE01EF,
+            0x1F3FF, 0xE007F, 0xE01EF,
     };
 
     static {
@@ -190,13 +191,13 @@ public final class CharWidth {
             return BMP_WIDTHS[codePoint];
         }
 
-        // Supplementary plane: use Arrays.binarySearch on start values
-        if (inRanges(codePoint, SUPPLEMENTARY_WIDE_STARTS, SUPPLEMENTARY_WIDE_ENDS)) {
-            return 2;
-        }
-
+        // Supplementary plane: check zero-width first (skin tones overlap with emoji ranges)
         if (inRanges(codePoint, SUPPLEMENTARY_ZERO_STARTS, SUPPLEMENTARY_ZERO_ENDS)) {
             return 0;
+        }
+
+        if (inRanges(codePoint, SUPPLEMENTARY_WIDE_STARTS, SUPPLEMENTARY_WIDE_ENDS)) {
+            return 2;
         }
 
         return 1;
@@ -204,6 +205,13 @@ public final class CharWidth {
 
     /**
      * Returns the total display width of a string.
+     * <p>
+     * Handles grapheme clusters correctly:
+     * <ul>
+     *   <li>ZWJ sequences (e.g., 👨‍👦): width 2 for the combined glyph</li>
+     *   <li>Regional Indicator pairs (flags, e.g., 🇫🇷): width 2</li>
+     *   <li>Skin tone modifiers: zero-width (added to base emoji)</li>
+     * </ul>
      *
      * @param s the string to measure
      * @return the total display width in terminal columns
@@ -216,17 +224,53 @@ public final class CharWidth {
         int i = 0;
         while (i < s.length()) {
             int codePoint = s.codePointAt(i);
-            width += of(codePoint);
-            i += Character.charCount(codePoint);
+            int charCount = Character.charCount(codePoint);
+            int cpWidth = of(codePoint);
+
+            // ZWJ: skip its width and the following codepoint's width contribution
+            if (cpWidth == 0 && codePoint == 0x200D) {
+                i += charCount;
+                if (i < s.length()) {
+                    // Skip following codepoint (it joins the previous char)
+                    i += Character.charCount(s.codePointAt(i));
+                }
+                continue;
+            }
+
+            // Regional Indicator pair: flag emoji = width 2
+            if (isRegionalIndicator(codePoint)) {
+                int nextIdx = i + charCount;
+                if (nextIdx < s.length()) {
+                    int next = s.codePointAt(nextIdx);
+                    if (isRegionalIndicator(next)) {
+                        width += 2; // Flag pair = single glyph, width 2
+                        i = nextIdx + Character.charCount(next);
+                        continue;
+                    }
+                }
+            }
+
+            width += cpWidth;
+            i += charCount;
         }
         return width;
     }
 
     /**
+     * Returns true if the code point is a Regional Indicator symbol (U+1F1E6-U+1F1FF).
+     * Regional Indicator pairs form flag emoji.
+     */
+    private static boolean isRegionalIndicator(int codePoint) {
+        return codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF;
+    }
+
+    /**
      * Returns a substring that fits within the given display width,
-     * respecting code point boundaries.
+     * respecting code point and grapheme cluster boundaries.
      * <p>
      * If a wide character would exceed maxWidth, it is not included.
+     * ZWJ sequences are kept intact - truncation happens at the last
+     * safe break point before the ZWJ sequence if it wouldn't fit.
      *
      * @param s the source string
      * @param maxWidth the maximum display width in columns
@@ -238,16 +282,112 @@ public final class CharWidth {
         }
         int width = 0;
         int i = 0;
+        int lastSafeBreak = 0;
+        int lastSafeWidth = 0;
+        boolean inZwjSequence = false;
+
         while (i < s.length()) {
             int codePoint = s.codePointAt(i);
-            int charWidth = of(codePoint);
-            if (width + charWidth > maxWidth) {
+            int charCount = Character.charCount(codePoint);
+            int cpWidth = of(codePoint);
+
+            // Track ZWJ sequences to avoid breaking in the middle
+            if (codePoint == 0x200D) {
+                // ZWJ - we're in a sequence, don't update safe break point
+                inZwjSequence = true;
+                i += charCount;
+                continue;
+            }
+
+            // If we just finished a ZWJ sequence (current char is not ZWJ)
+            // and we're not about to start another one
+            if (inZwjSequence) {
+                // We're processing the character after ZWJ
+                // Skip width contribution (it joins with previous)
+                i += charCount;
+                // Check if next character is also ZWJ to continue sequence
+                if (i < s.length() && s.codePointAt(i) != 0x200D) {
+                    inZwjSequence = false;
+                    // After exiting ZWJ sequence, this is a safe break point
+                    lastSafeBreak = i;
+                    lastSafeWidth = width;
+                }
+                continue;
+            }
+
+            // Check if adding this character would exceed max width
+            if (width + cpWidth > maxWidth) {
                 break;
             }
-            width += charWidth;
-            i += Character.charCount(codePoint);
+
+            // Check if this starts a ZWJ sequence
+            int nextIdx = i + charCount;
+            if (nextIdx < s.length() && s.codePointAt(nextIdx) == 0x200D) {
+                // This character starts a ZWJ sequence
+                // Only commit to it if we have room
+                int sequenceWidth = measureZwjSequence(s, i);
+                if (width + sequenceWidth > maxWidth) {
+                    // ZWJ sequence won't fit, stop here
+                    break;
+                }
+                // Mark we're entering a ZWJ sequence (safe break was before this char)
+                lastSafeBreak = i;
+                lastSafeWidth = width;
+                inZwjSequence = true;
+            }
+
+            width += cpWidth;
+            i += charCount;
+
+            // Update safe break point for non-ZWJ characters
+            if (!inZwjSequence) {
+                lastSafeBreak = i;
+                lastSafeWidth = width;
+            }
         }
+
+        // If we broke inside a ZWJ sequence, use the last safe break
+        if (inZwjSequence && lastSafeBreak < i) {
+            return s.substring(0, lastSafeBreak);
+        }
+
         return s.substring(0, i);
+    }
+
+    /**
+     * Measures the display width of a ZWJ sequence starting at the given index.
+     */
+    private static int measureZwjSequence(String s, int start) {
+        int i = start;
+        int width = 0;
+        boolean first = true;
+
+        while (i < s.length()) {
+            int codePoint = s.codePointAt(i);
+            int charCount = Character.charCount(codePoint);
+
+            if (codePoint == 0x200D) {
+                // ZWJ itself has no width
+                i += charCount;
+                continue;
+            }
+
+            if (first) {
+                // First character of sequence contributes width
+                width = of(codePoint);
+                first = false;
+            }
+            // Subsequent characters joined by ZWJ don't add width
+
+            i += charCount;
+
+            // Check if next is ZWJ to continue sequence
+            if (i >= s.length() || s.codePointAt(i) != 0x200D) {
+                break;
+            }
+        }
+
+        return width;
     }
 
     /**
@@ -273,6 +413,73 @@ public final class CharWidth {
             i -= Character.charCount(codePoint);
         }
         return s.substring(i);
+    }
+
+    /**
+     * Truncation position for ellipsis.
+     */
+    public enum TruncatePosition {
+        /** Truncate at end: "Hello..." */
+        END,
+        /** Truncate at start: "...World" */
+        START,
+        /** Truncate in middle: "Hel...rld" */
+        MIDDLE
+    }
+
+    private static final String DEFAULT_ELLIPSIS = "...";
+
+    /**
+     * Truncates a string to fit within the given display width, adding an ellipsis.
+     * <p>
+     * Uses the default ellipsis ("...").
+     *
+     * @param s the source string
+     * @param maxWidth the maximum display width in columns (must be at least ellipsis width)
+     * @param position where to place the ellipsis
+     * @return the truncated string with ellipsis, or the original if it fits
+     */
+    public static String truncateWithEllipsis(String s, int maxWidth, TruncatePosition position) {
+        return truncateWithEllipsis(s, maxWidth, DEFAULT_ELLIPSIS, position);
+    }
+
+    /**
+     * Truncates a string to fit within the given display width, adding a custom ellipsis.
+     *
+     * @param s the source string
+     * @param maxWidth the maximum display width in columns (must be at least ellipsis width)
+     * @param ellipsis the ellipsis string to use (e.g., "...", "…", ">>")
+     * @param position where to place the ellipsis
+     * @return the truncated string with ellipsis, or the original if it fits
+     */
+    public static String truncateWithEllipsis(String s, int maxWidth, String ellipsis, TruncatePosition position) {
+        if (s == null || s.isEmpty()) {
+            return "";
+        }
+        int stringWidth = of(s);
+        if (stringWidth <= maxWidth) {
+            return s;
+        }
+
+        int ellipsisWidth = of(ellipsis);
+        if (maxWidth <= ellipsisWidth) {
+            // Not enough room for ellipsis, just clip
+            return substringByWidth(s, maxWidth);
+        }
+
+        int availableWidth = maxWidth - ellipsisWidth;
+
+        switch (position) {
+            case START:
+                return ellipsis + substringByWidthFromEnd(s, availableWidth);
+            case MIDDLE:
+                int leftWidth = (availableWidth + 1) / 2;
+                int rightWidth = availableWidth / 2;
+                return substringByWidth(s, leftWidth) + ellipsis + substringByWidthFromEnd(s, rightWidth);
+            case END:
+            default:
+                return substringByWidth(s, availableWidth) + ellipsis;
+        }
     }
 
     private static boolean inRanges(int codePoint, int[] starts, int[] ends) {

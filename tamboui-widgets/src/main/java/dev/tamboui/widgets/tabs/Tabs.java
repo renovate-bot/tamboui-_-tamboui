@@ -13,6 +13,7 @@ import dev.tamboui.style.PropertyRegistry;
 import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardProperties;
 import dev.tamboui.style.Style;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.widget.StatefulWidget;
@@ -146,7 +147,7 @@ public final class Tabs implements StatefulWidget<TabsState> {
         for (int i = 0; i < titles.size(); i++) {
             // Add divider before tab (except first)
             if (i > 0) {
-                if (x + divider.content().length() > tabsArea.right()) {
+                if (x + CharWidth.of(divider.content()) > tabsArea.right()) {
                     break;
                 }
                 x = buffer.setSpan(x, y, divider.patchStyle(style));
@@ -158,7 +159,7 @@ public final class Tabs implements StatefulWidget<TabsState> {
 
             // Add left padding
             if (!paddingLeft.isEmpty()) {
-                if (x + paddingLeft.length() > tabsArea.right()) {
+                if (x + CharWidth.of(paddingLeft) > tabsArea.right()) {
                     break;
                 }
                 x = buffer.setString(x, y, paddingLeft, tabStyle);
@@ -182,15 +183,16 @@ public final class Tabs implements StatefulWidget<TabsState> {
                 }
                 int remainingWidth = tabsArea.right() - x;
                 String content = span.content();
-                if (content.length() > remainingWidth) {
-                    content = content.substring(0, remainingWidth);
+                int contentWidth = CharWidth.of(content);
+                if (contentWidth > remainingWidth) {
+                    content = CharWidth.substringByWidth(content, remainingWidth);
                 }
                 x = buffer.setString(x, y, content, span.style());
             }
 
             // Add right padding
             if (!paddingRight.isEmpty()) {
-                if (x + paddingRight.length() <= tabsArea.right()) {
+                if (x + CharWidth.of(paddingRight) <= tabsArea.right()) {
                     x = buffer.setString(x, y, paddingRight, tabStyle);
                 }
             }

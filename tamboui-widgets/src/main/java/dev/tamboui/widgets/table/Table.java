@@ -15,6 +15,7 @@ import dev.tamboui.style.PropertyRegistry;
 import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardProperties;
 import dev.tamboui.style.Style;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Text;
 import dev.tamboui.text.Span;
@@ -228,9 +229,9 @@ public final class Table implements StatefulWidget<TableState> {
     private int calculateHighlightWidth(TableState state) {
         switch (highlightSpacing) {
             case ALWAYS:
-                return highlightSymbol.length();
+                return CharWidth.of(highlightSymbol);
             case WHEN_SELECTED:
-                return state.selected() != null ? highlightSymbol.length() : 0;
+                return state.selected() != null ? CharWidth.of(highlightSymbol) : 0;
             case NEVER:
             default:
                 return 0;
@@ -290,10 +291,12 @@ public final class Table implements StatefulWidget<TableState> {
                     for (int spanIdx = 0; spanIdx < patchedSpans.size(); spanIdx++) {
                         Span span = patchedSpans.get(spanIdx);
                         String text = span.content();
-                        int remainingWidth = Math.min(text.length(), colWidth - (col_x - x));
-                        if (remainingWidth > 0) {
-                            buffer.setString(col_x, lineY, text.substring(0, remainingWidth), span.style());
-                            col_x += remainingWidth;
+                        int textWidth = CharWidth.of(text);
+                        int remainingWidth = colWidth - (col_x - x);
+                        if (remainingWidth > 0 && textWidth > 0) {
+                            String toRender = textWidth <= remainingWidth ? text : CharWidth.substringByWidth(text, remainingWidth);
+                            buffer.setString(col_x, lineY, toRender, span.style());
+                            col_x += CharWidth.of(toRender);
                         }
                     }
                 }

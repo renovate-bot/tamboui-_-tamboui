@@ -7,6 +7,7 @@ package dev.tamboui.widgets.chart;
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Style;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.widget.Widget;
@@ -165,8 +166,9 @@ public final class Chart implements Widget {
 
             if (y >= graphArea.y() && y < graphArea.bottom()) {
                 String labelText = labels.get(i).content();
+                int labelTextWidth = CharWidth.of(labelText);
                 // Right-align label
-                int labelX = x + labelWidth - labelText.length();
+                int labelX = x + labelWidth - labelTextWidth;
                 buffer.setString(Math.max(x, labelX), y, labelText, labelStyle);
             }
         }
@@ -193,9 +195,10 @@ public final class Chart implements Widget {
 
             if (x >= graphArea.x() && x < graphArea.right()) {
                 String labelText = labels.get(i).content();
+                int labelTextWidth = CharWidth.of(labelText);
                 // Center label under position
-                int labelX = x - labelText.length() / 2;
-                labelX = Math.max(graphArea.x(), Math.min(labelX, graphArea.right() - labelText.length()));
+                int labelX = x - labelTextWidth / 2;
+                labelX = Math.max(graphArea.x(), Math.min(labelX, graphArea.right() - labelTextWidth));
                 buffer.setString(labelX, y, labelText, labelStyle);
             }
         }
@@ -205,11 +208,16 @@ public final class Chart implements Widget {
         // Y-axis title (vertical, on left)
         yAxis.title().ifPresent(title -> {
             int x = chartArea.x();
-            int y = graphArea.y() + graphArea.height() / 2;
-            // For simplicity, just show first character vertically
+            // For simplicity, just show characters vertically
             String titleText = title.rawContent();
-            for (int i = 0; i < Math.min(titleText.length(), graphArea.height()); i++) {
-                buffer.setString(x, graphArea.y() + i, String.valueOf(titleText.charAt(i)), yAxis.style());
+            int row = 0;
+            int i = 0;
+            while (i < titleText.length() && row < graphArea.height()) {
+                int codePoint = titleText.codePointAt(i);
+                String symbol = new String(Character.toChars(codePoint));
+                buffer.setString(x, graphArea.y() + row, symbol, yAxis.style());
+                row++;
+                i += Character.charCount(codePoint);
             }
         });
 
@@ -217,7 +225,8 @@ public final class Chart implements Widget {
         xAxis.title().ifPresent(title -> {
             int y = chartArea.bottom() - 1;
             String titleText = title.rawContent();
-            int x = graphArea.x() + (graphArea.width() - titleText.length()) / 2;
+            int titleWidth = CharWidth.of(titleText);
+            int x = graphArea.x() + (graphArea.width() - titleWidth) / 2;
             buffer.setString(Math.max(graphArea.x(), x), y, titleText, xAxis.style());
         });
     }
@@ -434,7 +443,7 @@ public final class Chart implements Widget {
             return 0;
         }
         return yAxis.labels().stream()
-            .mapToInt(s -> s.content().length())
+            .mapToInt(s -> CharWidth.of(s.content()))
             .max()
             .orElse(0) + 1;
     }
