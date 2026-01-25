@@ -526,4 +526,88 @@ class CssParserTest {
 
         assertThat(attrSelector.toCss()).isEqualTo("[title]");
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CSS Inheritance Features
+    // ═══════════════════════════════════════════════════════════════
+
+    @Test
+    void parsesInheritKeyword() {
+        Stylesheet stylesheet = CssParser.parse(".child { text-overflow: inherit; }");
+
+        assertThat(stylesheet.rules()).hasSize(1);
+        Rule rule = stylesheet.rules().get(0);
+        PropertyValue pv = rule.declarations().get("text-overflow");
+        assertThat(pv.raw()).isEqualTo("inherit");
+        assertThat(pv.isInherit()).isTrue();
+        assertThat(pv.important()).isFalse();
+        assertThat(pv.inheritable()).isFalse();
+    }
+
+    @Test
+    void parsesInheritableModifier() {
+        Stylesheet stylesheet = CssParser.parse(".parent { text-overflow: ellipsis inheritable; }");
+
+        assertThat(stylesheet.rules()).hasSize(1);
+        Rule rule = stylesheet.rules().get(0);
+        PropertyValue pv = rule.declarations().get("text-overflow");
+        assertThat(pv.raw()).isEqualTo("ellipsis");
+        assertThat(pv.inheritable()).isTrue();
+        assertThat(pv.important()).isFalse();
+        assertThat(pv.isInherit()).isFalse();
+    }
+
+    @Test
+    void parsesImportantAndInheritableTogether() {
+        Stylesheet stylesheet = CssParser.parse(".parent { color: red !important inheritable; }");
+
+        assertThat(stylesheet.rules()).hasSize(1);
+        Rule rule = stylesheet.rules().get(0);
+        PropertyValue pv = rule.declarations().get("color");
+        assertThat(pv.raw()).isEqualTo("red");
+        assertThat(pv.important()).isTrue();
+        assertThat(pv.inheritable()).isTrue();
+    }
+
+    @Test
+    void parsesInheritableAndImportantReversedOrder() {
+        Stylesheet stylesheet = CssParser.parse(".parent { color: red inheritable !important; }");
+
+        assertThat(stylesheet.rules()).hasSize(1);
+        Rule rule = stylesheet.rules().get(0);
+        PropertyValue pv = rule.declarations().get("color");
+        assertThat(pv.raw()).isEqualTo("red");
+        assertThat(pv.important()).isTrue();
+        assertThat(pv.inheritable()).isTrue();
+    }
+
+    @Test
+    void parsesInheritableWithMultipleValues() {
+        Stylesheet stylesheet = CssParser.parse(".parent { padding: 1 2 3 4 inheritable; }");
+
+        assertThat(stylesheet.rules()).hasSize(1);
+        Rule rule = stylesheet.rules().get(0);
+        PropertyValue pv = rule.declarations().get("padding");
+        assertThat(pv.raw()).isEqualTo("1 2 3 4");
+        assertThat(pv.inheritable()).isTrue();
+    }
+
+    @Test
+    void inheritKeywordToString() {
+        PropertyValue pv = PropertyValue.of("inherit");
+        assertThat(pv.toString()).isEqualTo("inherit");
+        assertThat(pv.isInherit()).isTrue();
+    }
+
+    @Test
+    void inheritableToString() {
+        PropertyValue pv = PropertyValue.inheritable("ellipsis");
+        assertThat(pv.toString()).isEqualTo("ellipsis inheritable");
+    }
+
+    @Test
+    void importantAndInheritableToString() {
+        PropertyValue pv = PropertyValue.create("red", true, true);
+        assertThat(pv.toString()).isEqualTo("red inheritable !important");
+    }
 }

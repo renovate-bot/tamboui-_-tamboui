@@ -115,7 +115,20 @@ public final class CascadeResolver {
 
         for (Map.Entry<String, PropertyValue> entry : props.entrySet()) {
             String prop = entry.getKey();
-            String value = entry.getValue().raw();
+            PropertyValue pv = entry.getValue();
+            String value = pv.raw();
+
+            // Handle "inherit" keyword (child wants parent's value)
+            if (pv.isInherit()) {
+                builder.markAsInherited(prop);
+                continue;
+            }
+
+            // Handle "inheritable" modifier (parent marks value as inheritable)
+            if (pv.inheritable()) {
+                builder.markInheritable(prop);
+            }
+
             String resolvedValue = PropertyConverter.resolveVariables(value, variables);
 
             // Try to look up the property in the registry
