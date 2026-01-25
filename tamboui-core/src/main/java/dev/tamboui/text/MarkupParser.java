@@ -62,7 +62,7 @@ import java.util.regex.Pattern;
  */
 public final class MarkupParser {
 
-    private static final Pattern emoji_PATTERN = Pattern.compile(":([^:]+):");
+    private static final Pattern emoji_PATTERN = Pattern.compile(":([^:\\s]+):");
     private static final EmojiResolver DEFAULT_EMOJI_RESOLVER = (key) -> Emoji.emojis().get(key);
 
     private static final Map<String, Style> BUILT_IN_STYLES;
