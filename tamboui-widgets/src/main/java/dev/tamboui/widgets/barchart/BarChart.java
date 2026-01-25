@@ -14,6 +14,7 @@ import dev.tamboui.style.PropertyRegistry;
 import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardProperties;
 import dev.tamboui.style.Style;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.widget.Widget;
 import dev.tamboui.widgets.block.Block;
 import static dev.tamboui.util.CollectionUtil.listCopyOf;
@@ -394,7 +395,8 @@ public final class BarChart implements Widget {
                 if (labelHeight > 0 && bar.label().isPresent()) {
                     String labelStr = truncate(bar.label().get().rawContent(), barWidth);
                     Style effectiveLabelStyle = labelStyle != null ? labelStyle : Style.EMPTY;
-                    int labelX = x + (barWidth - labelStr.length()) / 2;
+                    int labelStrWidth = CharWidth.of(labelStr);
+                    int labelX = x + (barWidth - labelStrWidth) / 2;
                     labelX = Math.max(x, labelX);
                     buffer.setString(labelX, area.bottom() - 1, labelStr, effectiveLabelStyle);
                 }
@@ -402,10 +404,11 @@ public final class BarChart implements Widget {
                 // Render value above bar
                 if (chartHeight > 1 && barHeight < chartHeight) {
                     String valueStr = bar.displayValue();
-                    if (valueStr.length() <= barWidth) {
+                    int valueStrWidth = CharWidth.of(valueStr);
+                    if (valueStrWidth <= barWidth) {
                         Style effectiveValueStyle = bar.valueStyle()
                             .orElse(valueStyle != null ? valueStyle : Style.EMPTY);
-                        int valueX = x + (barWidth - valueStr.length()) / 2;
+                        int valueX = x + (barWidth - valueStrWidth) / 2;
                         valueX = Math.max(x, valueX);
                         int valueY = area.y() + chartHeight - barHeight - 1;
                         if (valueY >= area.y()) {
@@ -461,7 +464,8 @@ public final class BarChart implements Widget {
                     String labelStr = truncate(bar.label().get().rawContent(), labelWidth);
                     Style effectiveLabelStyle = labelStyle != null ? labelStyle : Style.EMPTY;
                     // Right-align label
-                    int labelX = area.x() + labelWidth - labelStr.length();
+                    int labelStrWidth = CharWidth.of(labelStr);
+                    int labelX = area.x() + labelWidth - labelStrWidth;
                     for (int h = 0; h < barWidth && y + h < area.bottom(); h++) {
                         buffer.setString(labelX, y + h, labelStr, effectiveLabelStyle);
                     }
@@ -477,7 +481,8 @@ public final class BarChart implements Widget {
 
                 // Render value at end of bar
                 String valueStr = bar.displayValue();
-                if (barLength + valueStr.length() + 1 <= chartWidth) {
+                int valueStrWidth = CharWidth.of(valueStr);
+                if (barLength + valueStrWidth + 1 <= chartWidth) {
                     Style effectiveValueStyle = bar.valueStyle()
                         .orElse(valueStyle != null ? valueStyle : Style.EMPTY);
                     buffer.setString(barStartX + barLength + 1, y, valueStr, effectiveValueStyle);
@@ -513,11 +518,11 @@ public final class BarChart implements Widget {
             .orElse(0);
     }
 
-    private String truncate(String str, int maxLen) {
-        if (str.length() <= maxLen) {
+    private String truncate(String str, int maxWidth) {
+        if (CharWidth.of(str) <= maxWidth) {
             return str;
         }
-        return str.substring(0, maxLen);
+        return CharWidth.substringByWidth(str, maxWidth);
     }
 
     /**

@@ -158,4 +158,189 @@ class BufferWideCharTest {
         // Should include the wide char cell and the continuation cell
         assertThat(updates).hasSize(2);
     }
+
+    @Test
+    @DisplayName("ZWJ emoji occupies two cells")
+    void zwjEmojiOccupiesTwoCells() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 1));
+        // 👨‍👦 = man (U+1F468) + ZWJ (U+200D) + boy (U+1F466)
+        String family = "\uD83D\uDC68\u200D\uD83D\uDC66";
+        buffer.setString(0, 0, family, Style.EMPTY);
+
+        assertThat(buffer.get(0, 0).symbol()).isEqualTo(family);
+        assertThat(buffer.get(1, 0).isContinuation()).isTrue();
+        assertThat(buffer.get(2, 0).symbol()).isEqualTo(" "); // Empty, not another char
+    }
+
+    @Test
+    @DisplayName("Flag emoji occupies two cells")
+    void flagEmojiOccupiesTwoCells() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 1));
+        // 🇬🇱 = Regional Indicator G (U+1F1EC) + Regional Indicator L (U+1F1F1)
+        String greenland = "\uD83C\uDDEC\uD83C\uDDF1";
+        buffer.setString(0, 0, greenland, Style.EMPTY);
+
+        assertThat(buffer.get(0, 0).symbol()).isEqualTo(greenland);
+        assertThat(buffer.get(1, 0).isContinuation()).isTrue();
+        assertThat(buffer.get(2, 0).symbol()).isEqualTo(" ");
+    }
+
+    @Test
+    @DisplayName("Skin tone emoji occupies two cells")
+    void skinToneEmojiOccupiesTwoCells() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 1));
+        // 👋🏻 = waving hand (U+1F44B) + light skin tone (U+1F3FB)
+        String wave = "\uD83D\uDC4B\uD83C\uDFFB";
+        buffer.setString(0, 0, wave, Style.EMPTY);
+
+        assertThat(buffer.get(0, 0).symbol()).isEqualTo(wave);
+        assertThat(buffer.get(1, 0).isContinuation()).isTrue();
+        assertThat(buffer.get(2, 0).symbol()).isEqualTo(" ");
+    }
+
+    @Test
+    @DisplayName("Multiple flag emoji render correctly")
+    void multipleFlagEmojiRenderCorrectly() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 1));
+        // 🇫🇷🇬🇱 = France + Greenland
+        String france = "\uD83C\uDDEB\uD83C\uDDF7";
+        String greenland = "\uD83C\uDDEC\uD83C\uDDF1";
+        buffer.setString(0, 0, france + greenland, Style.EMPTY);
+
+        assertThat(buffer.get(0, 0).symbol()).isEqualTo(france);
+        assertThat(buffer.get(1, 0).isContinuation()).isTrue();
+        assertThat(buffer.get(2, 0).symbol()).isEqualTo(greenland);
+        assertThat(buffer.get(3, 0).isContinuation()).isTrue();
+    }
+
+    @Test
+    @DisplayName("ZWJ emoji with text before and after")
+    void zwjEmojiWithSurroundingText() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 20, 1));
+        // 👨‍🌾 = farmer emoji
+        String farmer = "\uD83E\uDDD1\u200D\uD83C\uDF3E";
+        buffer.setString(0, 0, "A" + farmer + "B", Style.EMPTY);
+
+        assertThat(buffer.get(0, 0).symbol()).isEqualTo("A");
+        assertThat(buffer.get(1, 0).symbol()).isEqualTo(farmer);
+        assertThat(buffer.get(2, 0).isContinuation()).isTrue();
+        assertThat(buffer.get(3, 0).symbol()).isEqualTo("B");
+    }
+
+    @Test
+    @DisplayName("setString returns correct position after ZWJ emoji")
+    void setStringReturnsCorrectPositionAfterZwj() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 20, 1));
+        // 👨‍👦 = family emoji, width 2
+        String family = "\uD83D\uDC68\u200D\uD83D\uDC66";
+        int endCol = buffer.setString(0, 0, family, Style.EMPTY);
+
+        // ZWJ emoji should occupy 2 columns
+        assertThat(endCol).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("setString returns correct position after flag emoji")
+    void setStringReturnsCorrectPositionAfterFlag() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 20, 1));
+        // 🇬🇱 = Greenland flag, width 2
+        String greenland = "\uD83C\uDDEC\uD83C\uDDF1";
+        int endCol = buffer.setString(0, 0, greenland, Style.EMPTY);
+
+        assertThat(endCol).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Flag emoji at edge is replaced with space")
+    void flagEmojiAtEdgeReplacedWithSpace() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 5, 1));
+        // Place a flag at column 4 (rightmost column), no room for 2-wide char
+        String greenland = "\uD83C\uDDEC\uD83C\uDDF1";
+        buffer.setString(4, 0, greenland, Style.EMPTY);
+
+        // Should be replaced with a space since there's no room for 2 columns
+        assertThat(buffer.get(4, 0).symbol()).isEqualTo(" ");
+    }
+
+    @Test
+    @DisplayName("bald_man ZWJ emoji occupies two cells and returns correct position")
+    void baldManZwjEmojiOccupiesTwoCells() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 10, 1));
+        // 👨‍🦲 = man (U+1F468) + ZWJ (U+200D) + bald (U+1F9B2)
+        String baldMan = "\uD83D\uDC68\u200D\uD83E\uDDB2";
+        int endCol = buffer.setString(0, 0, baldMan, Style.EMPTY);
+
+        // Should return position 2 (width of combined emoji)
+        assertThat(endCol).isEqualTo(2);
+
+        // Cell 0 should contain the FULL ZWJ sequence (all 3 codepoints)
+        String cellSymbol = buffer.get(0, 0).symbol();
+        assertThat(cellSymbol).isEqualTo(baldMan);
+
+        // Verify the cell contains exactly 3 codepoints: man + ZWJ + bald
+        int[] codepoints = cellSymbol.codePoints().toArray();
+        assertThat(codepoints).hasSize(3);
+        assertThat(codepoints[0]).isEqualTo(0x1F468); // man
+        assertThat(codepoints[1]).isEqualTo(0x200D);  // ZWJ
+        assertThat(codepoints[2]).isEqualTo(0x1F9B2); // bald
+
+        // Cell 1 should be continuation
+        assertThat(buffer.get(1, 0).isContinuation()).isTrue();
+
+        // Cell 2 should be empty (space)
+        assertThat(buffer.get(2, 0).symbol()).isEqualTo(" ");
+    }
+
+    @Test
+    @DisplayName("diff between simple emoji and ZWJ emoji produces correct updates")
+    void diffBetweenSimpleAndZwjEmoji() {
+        Rect area = new Rect(0, 0, 10, 1);
+        Buffer prev = Buffer.empty(area);
+        Buffer curr = Buffer.empty(area);
+
+        // Previous buffer has simple emoji
+        String baby = "\uD83D\uDC76"; // 👶
+        prev.setString(0, 0, baby, Style.EMPTY);
+
+        // Current buffer has ZWJ emoji
+        String baldMan = "\uD83D\uDC68\u200D\uD83E\uDDB2"; // 👨‍🦲
+        curr.setString(0, 0, baldMan, Style.EMPTY);
+
+        java.util.List<CellUpdate> updates = prev.diff(curr);
+
+        // Should only have 1 update (cell 0 changed, cell 1 is CONTINUATION in both)
+        // Cell 0: baby -> baldMan
+        // Cell 1: CONTINUATION -> CONTINUATION (no change)
+        assertThat(updates).hasSize(1);
+        assertThat(updates.get(0).x()).isEqualTo(0);
+        assertThat(updates.get(0).cell().symbol()).isEqualTo(baldMan);
+    }
+
+    @Test
+    @DisplayName("diff when previous cell had content where continuation will be")
+    void diffWhenPreviousHadContentAtContinuationPosition() {
+        Rect area = new Rect(0, 0, 10, 1);
+        Buffer prev = Buffer.empty(area);
+        Buffer curr = Buffer.empty(area);
+
+        // Previous buffer has two 1-wide characters
+        prev.setString(0, 0, "AB", Style.EMPTY);
+
+        // Current buffer has ZWJ emoji
+        String baldMan = "\uD83D\uDC68\u200D\uD83E\uDDB2"; // 👨‍🦲
+        curr.setString(0, 0, baldMan, Style.EMPTY);
+
+        java.util.List<CellUpdate> updates = prev.diff(curr);
+
+        // Should have 2 updates:
+        // Cell 0: "A" -> baldMan
+        // Cell 1: "B" -> CONTINUATION
+        assertThat(updates).hasSize(2);
+
+        // Check both updates are present
+        boolean hasCell0 = updates.stream().anyMatch(u -> u.x() == 0 && u.cell().symbol().equals(baldMan));
+        boolean hasCell1 = updates.stream().anyMatch(u -> u.x() == 1 && u.cell().isContinuation());
+        assertThat(hasCell0).isTrue();
+        assertThat(hasCell1).isTrue();
+    }
 }

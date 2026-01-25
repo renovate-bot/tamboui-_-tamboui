@@ -15,6 +15,7 @@ import dev.tamboui.style.PropertyRegistry;
 import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardProperties;
 import dev.tamboui.style.Style;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.widget.StatefulWidget;
 import dev.tamboui.widgets.block.Block;
@@ -181,16 +182,18 @@ public final class TextArea implements StatefulWidget<TextAreaState> {
                 String line = state.getLine(lineIndex);
 
                 // Calculate visible portion of line
+                // scrollCol is a character offset; convert to proper substring then truncate by width
                 String visibleText = "";
                 if (scrollCol < line.length()) {
-                    int end = Math.min(line.length(), scrollCol + visibleWidth);
-                    visibleText = line.substring(scrollCol, end);
+                    String lineFromScroll = line.substring(scrollCol);
+                    visibleText = CharWidth.substringByWidth(lineFromScroll, visibleWidth);
                 }
 
                 buffer.setString(textArea.left(), screenY, visibleText, style);
 
                 // Fill remaining space
-                int textEnd = textArea.left() + visibleText.length();
+                int visibleTextWidth = CharWidth.of(visibleText);
+                int textEnd = textArea.left() + visibleTextWidth;
                 for (int x = textEnd; x < textArea.right(); x++) {
                     buffer.set(x, screenY, new Cell(" ", style));
                 }

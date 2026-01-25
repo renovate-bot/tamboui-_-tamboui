@@ -247,4 +247,82 @@ class CharWidthTest {
         // "a" + combining diaeresis = "ä" but width 1
         assertThat(CharWidth.of("a\u0308")).isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("ZWJ family emoji has width 2")
+    void zwjFamilyEmojiHasWidth2() {
+        // 👨‍👦 = man (U+1F468) + ZWJ (U+200D) + boy (U+1F466)
+        String family = "\uD83D\uDC68\u200D\uD83D\uDC66";
+        assertThat(CharWidth.of(family)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("ZWJ farmer emoji has width 2")
+    void zwjFarmerEmojiHasWidth2() {
+        // 🧑‍🌾 = person (U+1F9D1) + ZWJ (U+200D) + sheaf of rice (U+1F33E)
+        String farmer = "\uD83E\uDDD1\u200D\uD83C\uDF3E";
+        assertThat(CharWidth.of(farmer)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Flag emoji has width 2")
+    void flagEmojiHasWidth2() {
+        // 🇫🇷 = Regional Indicator F (U+1F1EB) + Regional Indicator R (U+1F1F7)
+        String france = "\uD83C\uDDEB\uD83C\uDDF7";
+        assertThat(CharWidth.of(france)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Greenland flag emoji has width 2")
+    void greenlandFlagHasWidth2() {
+        // 🇬🇱 = Regional Indicator G (U+1F1EC) + Regional Indicator L (U+1F1F1)
+        String greenland = "\uD83C\uDDEC\uD83C\uDDF1";
+        assertThat(CharWidth.of(greenland)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Skin tone modifier emoji has width 2")
+    void skinToneEmojiHasWidth2() {
+        // 👋🏻 = waving hand (U+1F44B) + light skin tone (U+1F3FB)
+        String wave = "\uD83D\uDC4B\uD83C\uDFFB";
+        assertThat(CharWidth.of(wave)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("ASCII string fast path")
+    void asciiStringFastPath() {
+        // Should not engage grapheme logic
+        assertThat(CharWidth.of("Hello World")).isEqualTo(11);
+    }
+
+    @Test
+    @DisplayName("Multiple flag emoji have correct width")
+    void multipleFlagsHaveCorrectWidth() {
+        // 🇫🇷🇬🇱 = France + Greenland = 2 + 2 = 4
+        String flags = "\uD83C\uDDEB\uD83C\uDDF7\uD83C\uDDEC\uD83C\uDDF1";
+        assertThat(CharWidth.of(flags)).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("Complex ZWJ sequence has width 2")
+    void complexZwjSequenceHasWidth2() {
+        // 👨‍👩‍👧‍👦 = man + ZWJ + woman + ZWJ + girl + ZWJ + boy
+        String family = "\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66";
+        assertThat(CharWidth.of(family)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("bald_man ZWJ emoji has width 2")
+    void baldManZwjEmojiHasWidth2() {
+        // 👨‍🦲 = man (U+1F468) + ZWJ (U+200D) + bald (U+1F9B2)
+        String baldMan = "\uD83D\uDC68\u200D\uD83E\uDDB2";
+        assertThat(CharWidth.of(baldMan)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("bald emoji component has width 2")
+    void baldEmojiComponentHasWidth2() {
+        // 🦲 = U+1F9B2 (standalone bald emoji)
+        assertThat(CharWidth.of(0x1F9B2)).isEqualTo(2);
+    }
 }

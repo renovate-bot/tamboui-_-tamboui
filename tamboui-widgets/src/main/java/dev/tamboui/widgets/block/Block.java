@@ -19,6 +19,7 @@ import dev.tamboui.style.StringConverter;
 import dev.tamboui.style.Style;
 import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.symbols.merge.MergeStrategy;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.widget.Widget;
@@ -447,9 +448,9 @@ public final class Block implements Widget {
         String fullText = lineToString(line);
         Style lineStyle = getLineStyle(line);
 
-        if (maxWidth <= ELLIPSIS.length()) {
+        if (maxWidth <= CharWidth.of(ELLIPSIS)) {
             // Not enough room for ellipsis, just clip
-            return Line.from(new Span(fullText.substring(0, Math.min(fullText.length(), maxWidth)), lineStyle));
+            return Line.from(new Span(CharWidth.substringByWidth(fullText, maxWidth), lineStyle));
         }
 
         String truncated;
@@ -471,20 +472,20 @@ public final class Block implements Widget {
     }
 
     private String truncateEnd(String text, int maxWidth) {
-        int availableChars = maxWidth - ELLIPSIS.length();
-        return text.substring(0, availableChars) + ELLIPSIS;
+        int availableWidth = maxWidth - CharWidth.of(ELLIPSIS);
+        return CharWidth.substringByWidth(text, availableWidth) + ELLIPSIS;
     }
 
     private String truncateStart(String text, int maxWidth) {
-        int availableChars = maxWidth - ELLIPSIS.length();
-        return ELLIPSIS + text.substring(text.length() - availableChars);
+        int availableWidth = maxWidth - CharWidth.of(ELLIPSIS);
+        return ELLIPSIS + CharWidth.substringByWidthFromEnd(text, availableWidth);
     }
 
     private String truncateMiddle(String text, int maxWidth) {
-        int availableChars = maxWidth - ELLIPSIS.length();
-        int leftChars = (availableChars + 1) / 2;
-        int rightChars = availableChars / 2;
-        return text.substring(0, leftChars) + ELLIPSIS + text.substring(text.length() - rightChars);
+        int availableWidth = maxWidth - CharWidth.of(ELLIPSIS);
+        int leftWidth = (availableWidth + 1) / 2;
+        int rightWidth = availableWidth / 2;
+        return CharWidth.substringByWidth(text, leftWidth) + ELLIPSIS + CharWidth.substringByWidthFromEnd(text, rightWidth);
     }
 
     private String lineToString(Line line) {

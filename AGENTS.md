@@ -126,6 +126,56 @@ class MyApp extends ToolkitApp {
 - `dev.tamboui.inline` - InlineDisplay for progress/status output
 - `dev.tamboui.image` - Image widget and protocol implementations
 
+## Unicode and Display Width
+
+When working with text in widgets, **always use `CharWidth` for display width calculations**, not `String.length()`.
+
+### Critical Rules
+
+- **NEVER** use `text.length()` for display width calculations
+- **NEVER** use `text.substring(0, n)` for display truncation
+- **ALWAYS** use `CharWidth.of(text)` for display width
+- **ALWAYS** use `CharWidth.substringByWidth(text, maxWidth)` for truncation
+
+### Why This Matters
+
+Java's `String.length()` returns UTF-16 code units, not terminal display columns:
+
+| Character | `length()` | Display Width |
+|-----------|------------|---------------|
+| "A" | 1 | 1 |
+| "世" (CJK) | 1 | 2 |
+| "🔥" | 2 | 2 |
+| "👨‍🦲" (ZWJ) | 5 | 2 |
+
+### Required Pattern
+
+```java
+// WRONG
+int width = text.length();
+String truncated = text.substring(0, maxWidth);
+
+// CORRECT
+int width = CharWidth.of(text);
+String truncated = CharWidth.substringByWidth(text, maxWidth);
+```
+
+### CharWidth Utilities
+
+```java
+import dev.tamboui.text.CharWidth;
+
+CharWidth.of(String s)                    // Display width of string
+CharWidth.of(int codePoint)               // Display width of code point
+CharWidth.substringByWidth(s, maxWidth)   // Truncate by display width
+CharWidth.substringByWidthFromEnd(s, w)   // Truncate from end
+CharWidth.truncateWithEllipsis(s, w, pos) // Truncate with "..."
+```
+
+### Reference Implementation
+
+See `Paragraph.java` for correct CharWidth usage in text rendering.
+
 ## Code Style Guidelines
 
 - You MUST use Java 8 source compatibility for library modules

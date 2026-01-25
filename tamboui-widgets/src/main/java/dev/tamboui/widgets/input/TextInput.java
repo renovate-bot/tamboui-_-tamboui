@@ -15,6 +15,7 @@ import dev.tamboui.style.PropertyRegistry;
 import dev.tamboui.style.StylePropertyResolver;
 import dev.tamboui.style.StandardProperties;
 import dev.tamboui.style.Style;
+import dev.tamboui.text.CharWidth;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.widget.StatefulWidget;
 import dev.tamboui.widgets.block.Block;
@@ -111,28 +112,43 @@ public final class TextInput implements StatefulWidget<TextInputState> {
 
         // Show placeholder if empty
         if (text.isEmpty() && !placeholder.isEmpty()) {
-            buffer.setString(inputArea.left(), inputArea.top(), placeholder, placeholderStyle);
+            String visiblePlaceholder = CharWidth.substringByWidth(placeholder, inputArea.width());
+            buffer.setString(inputArea.left(), inputArea.top(), visiblePlaceholder, placeholderStyle);
             return;
         }
 
         // Calculate visible portion of text (for scrolling)
         int visibleWidth = inputArea.width();
-        int scrollOffset = 0;
+
+        // Calculate display width of text up to cursor
+        String textBeforeCursor = text.substring(0, cursorPos);
+        int widthBeforeCursor = CharWidth.of(textBeforeCursor);
 
         // If cursor is beyond visible area, scroll
-        if (cursorPos >= visibleWidth) {
-            scrollOffset = cursorPos - visibleWidth + 1;
+        // scrollDisplayOffset tracks how many display columns to skip
+        int scrollDisplayOffset = 0;
+        if (widthBeforeCursor >= visibleWidth) {
+            scrollDisplayOffset = widthBeforeCursor - visibleWidth + 1;
         }
 
-        // Render visible text
-        String visibleText = text.length() > scrollOffset
-            ? text.substring(scrollOffset, Math.min(text.length(), scrollOffset + visibleWidth))
-            : "";
+        // Find the character index corresponding to scrollDisplayOffset
+        int scrollCharOffset = 0;
+        int widthCount = 0;
+        while (scrollCharOffset < text.length() && widthCount < scrollDisplayOffset) {
+            int cp = text.codePointAt(scrollCharOffset);
+            widthCount += CharWidth.of(cp);
+            scrollCharOffset += Character.charCount(cp);
+        }
+
+        // Render visible text starting from scrollCharOffset
+        String textFromScroll = text.substring(scrollCharOffset);
+        String visibleText = CharWidth.substringByWidth(textFromScroll, visibleWidth);
 
         buffer.setString(inputArea.left(), inputArea.top(), visibleText, style);
 
         // Fill remaining space with empty styled cells
-        int textEnd = inputArea.left() + visibleText.length();
+        int visibleTextWidth = CharWidth.of(visibleText);
+        int textEnd = inputArea.left() + visibleTextWidth;
         for (int x = textEnd; x < inputArea.right(); x++) {
             buffer.set(x, inputArea.top(), new Cell(" ", style));
         }
@@ -152,11 +168,19 @@ public final class TextInput implements StatefulWidget<TextInputState> {
             return;
         }
 
+        String text = state.text();
         int cursorPos = state.cursorPosition();
         int visibleWidth = inputArea.width();
-        int scrollOffset = cursorPos >= visibleWidth ? cursorPos - visibleWidth + 1 : 0;
 
-        int cursorX = inputArea.left() + (cursorPos - scrollOffset);
+        // Calculate display width of text before cursor
+        String textBeforeCursor = text.substring(0, cursorPos);
+        int widthBeforeCursor = CharWidth.of(textBeforeCursor);
+
+        // Calculate scroll offset in display columns
+        int scrollDisplayOffset = widthBeforeCursor >= visibleWidth ? widthBeforeCursor - visibleWidth + 1 : 0;
+
+        // Cursor X position is the display width before cursor minus scroll offset
+        int cursorX = inputArea.left() + (widthBeforeCursor - scrollDisplayOffset);
         int cursorY = inputArea.top();
 
         // Render cursor as styled cell in buffer (avoids terminal cursor blink issues)

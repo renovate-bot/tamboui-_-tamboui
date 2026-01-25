@@ -189,6 +189,13 @@ public final class Buffer {
      * This method patches the style of existing cells rather than replacing them,
      * preserving background colors and other style attributes that were previously set.
      * This matches the behavior of ratatui.rs.
+     * <p>
+     * Handles grapheme clusters correctly:
+     * <ul>
+     *   <li>ZWJ sequences: characters after ZWJ are appended to the preceding cell</li>
+     *   <li>Regional Indicator pairs: combined into a single 2-wide cell</li>
+     *   <li>Skin tone modifiers: appended to preceding cell (zero-width)</li>
+     * </ul>
      *
      * @param x the x coordinate
      * @param y the y coordinate
@@ -202,6 +209,7 @@ public final class Buffer {
         }
 
         int col = x;
+        boolean appendToLast = false; // true after ZWJ - next char should join
         for (int i = 0; i < string.length(); ) {
             if (col >= area.right()) {
                 break;
@@ -212,17 +220,67 @@ public final class Buffer {
 
             if (charWidth == 0) {
                 // Zero-width character: append to preceding cell's symbol (grapheme clustering)
-                if (col > area.left()) {
-                    int prevCol = col - 1;
-                    Cell prevCell = get(prevCol, y);
-                    if (!prevCell.isContinuation()) {
-                        String combined = prevCell.symbol() + new String(Character.toChars(codePoint));
-                        set(prevCol, y, prevCell.symbol(combined));
-                    }
+                int baseCol = findBaseCell(col, y);
+                if (baseCol >= area.left()) {
+                    Cell baseCell = get(baseCol, y);
+                    String combined = baseCell.symbol() + new String(Character.toChars(codePoint));
+                    set(baseCol, y, baseCell.symbol(combined));
+                }
+                // Check if this is ZWJ - next char should join
+                if (codePoint == 0x200D) {
+                    appendToLast = true;
                 }
                 i += Character.charCount(codePoint);
                 continue;
             }
+
+            // Check for Regional Indicator pair (flag emoji)
+            if (isRegionalIndicator(codePoint)) {
+                int nextIdx = i + Character.charCount(codePoint);
+                if (nextIdx < string.length()) {
+                    int next = string.codePointAt(nextIdx);
+                    if (isRegionalIndicator(next)) {
+                        // Combine both RIs into a single 2-wide cell
+                        String flag = new String(Character.toChars(codePoint)) +
+                                      new String(Character.toChars(next));
+
+                        if (col + 1 >= area.right()) {
+                            // No room for 2-wide flag, replace with space
+                            if (col >= area.left()) {
+                                Cell existing = get(col, y);
+                                set(col, y, existing.patchStyle(style).symbol(" "));
+                            }
+                            col++;
+                        } else if (col >= area.left()) {
+                            Cell current = get(col, y);
+                            if (current.isContinuation() && col > area.left()) {
+                                set(col - 1, y, get(col - 1, y).symbol(" "));
+                            }
+                            Cell existing = get(col, y);
+                            set(col, y, existing.patchStyle(style).symbol(flag));
+                            set(col + 1, y, Cell.CONTINUATION);
+                            col += 2;
+                        }
+                        i = nextIdx + Character.charCount(next);
+                        appendToLast = false;
+                        continue;
+                    }
+                }
+            }
+
+            // This character follows a ZWJ - append to preceding cell
+            if (appendToLast) {
+                int baseCol = findBaseCell(col, y);
+                if (baseCol >= area.left()) {
+                    Cell baseCell = get(baseCol, y);
+                    String combined = baseCell.symbol() + new String(Character.toChars(codePoint));
+                    set(baseCol, y, baseCell.symbol(combined));
+                    appendToLast = false;
+                    i += Character.charCount(codePoint);
+                    continue;
+                }
+            }
+            appendToLast = false;
 
             String symbol = new String(Character.toChars(codePoint));
 
@@ -268,6 +326,30 @@ public final class Buffer {
         }
 
         return col;
+    }
+
+    /**
+     * Finds the base cell (non-continuation) for a given column.
+     * Looks backward from col-1 to find the first non-continuation cell.
+     * Returns -1 if no base cell found within the area.
+     */
+    private int findBaseCell(int col, int y) {
+        int searchCol = col - 1;
+        while (searchCol >= area.left()) {
+            Cell cell = get(searchCol, y);
+            if (!cell.isContinuation()) {
+                return searchCol;
+            }
+            searchCol--;
+        }
+        return -1;
+    }
+
+    /**
+     * Returns true if the code point is a Regional Indicator symbol (U+1F1E6-U+1F1FF).
+     */
+    private static boolean isRegionalIndicator(int codePoint) {
+        return codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF;
     }
 
     /**
