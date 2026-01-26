@@ -14,6 +14,7 @@ import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.toolkit.element.DefaultRenderContext;
 import dev.tamboui.toolkit.element.RenderContext;
+import dev.tamboui.widgets.columns.ColumnOrder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,21 +25,21 @@ import static dev.tamboui.toolkit.Toolkit.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for Columns.
+ * Tests for ColumnsElement.
  */
-class ColumnsTest {
+class ColumnsElementTest {
 
     @Test
     @DisplayName("preferredWidth() returns 0 for empty columns")
     void preferredWidth_emptyColumns() {
-        Columns cols = columns();
+        ColumnsElement cols = columns();
         assertThat(cols.preferredWidth()).isEqualTo(0);
     }
 
     @Test
     @DisplayName("preferredWidth() calculates width for single child")
     void preferredWidth_singleChild() {
-        Columns cols = columns(text("Hello"));
+        ColumnsElement cols = columns(text("Hello"));
         // "Hello" = 5 characters, 1 column
         assertThat(cols.preferredWidth()).isEqualTo(5);
     }
@@ -46,7 +47,7 @@ class ColumnsTest {
     @Test
     @DisplayName("preferredWidth() uses maxWidth * count for multiple children")
     void preferredWidth_multipleChildren() {
-        Columns cols = columns(
+        ColumnsElement cols = columns(
             text("A"),       // 1
             text("BB"),      // 2
             text("CCC")      // 3
@@ -58,7 +59,7 @@ class ColumnsTest {
     @Test
     @DisplayName("preferredWidth() includes spacing")
     void preferredWidth_withSpacing() {
-        Columns cols = columns(
+        ColumnsElement cols = columns(
             text("AA"),      // 2
             text("BB"),      // 2
             text("CC")       // 2
@@ -70,7 +71,7 @@ class ColumnsTest {
     @Test
     @DisplayName("preferredWidth() includes margin")
     void preferredWidth_withMargin() {
-        Columns cols = columns(
+        ColumnsElement cols = columns(
             text("Hello")    // 5
         ).margin(new Margin(1, 2, 1, 3)); // top, right, bottom, left
         // 5 + 2 (right) + 3 (left) = 10
@@ -80,7 +81,7 @@ class ColumnsTest {
     @Test
     @DisplayName("preferredWidth() with explicit column count")
     void preferredWidth_withExplicitColumnCount() {
-        Columns cols = columns(
+        ColumnsElement cols = columns(
             text("AAAA"),    // 4
             text("BB"),      // 2
             text("CCC"),     // 3
@@ -116,7 +117,7 @@ class ColumnsTest {
     @DisplayName("Auto column count adapts to available width")
     void autoColumnCount() {
         // 6 items of width 5
-        Columns cols = columns(
+        ColumnsElement cols = columns(
             text("AAAAA"),
             text("BBBBB"),
             text("CCCCC"),
@@ -266,20 +267,20 @@ class ColumnsTest {
     @Test
     @DisplayName("Columns fluent API chains correctly")
     void fluentApiChaining() {
-        Columns cols = columns(text("A"), text("B"))
+        ColumnsElement cols = columns(text("A"), text("B"))
             .spacing(1)
             .flex(Flex.SPACE_BETWEEN)
             .margin(2)
             .columnCount(2)
             .order(ColumnOrder.COLUMN_FIRST);
 
-        assertThat(cols).isInstanceOf(Columns.class);
+        assertThat(cols).isInstanceOf(ColumnsElement.class);
     }
 
     @Test
     @DisplayName("Columns created from collection")
     void columnsFromCollection() {
-        Columns cols = columns(Arrays.asList(text("A"), text("B"), text("C")));
+        ColumnsElement cols = columns(Arrays.asList(text("A"), text("B"), text("C")));
         assertThat(cols.preferredWidth()).isEqualTo(3);
     }
 
@@ -287,7 +288,7 @@ class ColumnsTest {
     @DisplayName("preferredHeight provides enough rows to render all children")
     void preferredHeightSizesBufferForAllRows() {
         // 4 items of width 5, forced to 2 columns -> 2 rows
-        Columns cols = columns(
+        ColumnsElement cols = columns(
             text("AAAAA"), text("BBBBB"),
             text("CCCCC"), text("DDDDD")
         ).columnCount(2);

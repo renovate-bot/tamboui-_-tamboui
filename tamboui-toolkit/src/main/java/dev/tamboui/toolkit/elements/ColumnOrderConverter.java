@@ -5,6 +5,7 @@
 package dev.tamboui.toolkit.elements;
 
 import dev.tamboui.style.PropertyConverter;
+import dev.tamboui.widgets.columns.ColumnOrder;
 
 import java.util.Optional;
 

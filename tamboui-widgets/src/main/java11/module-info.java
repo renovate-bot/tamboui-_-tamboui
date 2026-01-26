@@ -13,6 +13,7 @@ module dev.tamboui.widgets {
     exports dev.tamboui.widgets.canvas;
     exports dev.tamboui.widgets.canvas.shapes;
     exports dev.tamboui.widgets.chart;
+    exports dev.tamboui.widgets.columns;
     exports dev.tamboui.widgets.gauge;
     exports dev.tamboui.widgets.input;
     exports dev.tamboui.widgets.list;
