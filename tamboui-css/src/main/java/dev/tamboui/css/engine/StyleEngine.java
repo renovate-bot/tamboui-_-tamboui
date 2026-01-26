@@ -340,16 +340,26 @@ public final class StyleEngine {
     private List<Rule> collectRules() {
         List<Rule> rules = new ArrayList<>();
 
+        // Assign global source order so rules from later stylesheets
+        // always win over earlier ones with the same specificity.
+        // Each stylesheet's rules are parsed with per-stylesheet source orders
+        // starting from 0, so we renumber them globally here.
+        int globalOrder = 0;
+
         // Add rules from inline stylesheets
         for (Stylesheet stylesheet : inlineStylesheets) {
-            rules.addAll(stylesheet.rules());
+            for (Rule rule : stylesheet.rules()) {
+                rules.add(new Rule(rule.selector(), rule.declarations(), globalOrder++));
+            }
         }
 
         // Add rules from active named stylesheet
         if (activeStylesheetName != null) {
             StylesheetEntry entry = namedStylesheets.get(activeStylesheetName);
             if (entry != null) {
-                rules.addAll(entry.stylesheet().rules());
+                for (Rule rule : entry.stylesheet().rules()) {
+                    rules.add(new Rule(rule.selector(), rule.declarations(), globalOrder++));
+                }
             }
         }
 

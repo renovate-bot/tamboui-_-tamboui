@@ -94,7 +94,10 @@ public final class AnsiStringBuilder {
      * @return the ANSI code string (without CSI prefix or 'm' suffix)
      */
     public static String colorToAnsiForeground(Color color) {
-        if (color instanceof Color.Reset) {
+        if (color instanceof Color.Named) {
+            // Named colors delegate to their default value
+            return colorToAnsiForeground(((Color.Named) color).defaultValue());
+        } else if (color instanceof Color.Reset) {
             return "39";
         } else if (color instanceof Color.Ansi) {
             AnsiColor c = ((Color.Ansi) color).color();
@@ -116,7 +119,10 @@ public final class AnsiStringBuilder {
      * @return the ANSI code string (without CSI prefix or 'm' suffix)
      */
     public static String colorToAnsiBackground(Color color) {
-        if (color instanceof Color.Reset) {
+        if (color instanceof Color.Named) {
+            // Named colors delegate to their default value
+            return colorToAnsiBackground(((Color.Named) color).defaultValue());
+        } else if (color instanceof Color.Reset) {
             return "49";
         } else if (color instanceof Color.Ansi) {
             AnsiColor c = ((Color.Ansi) color).color();
@@ -140,7 +146,10 @@ public final class AnsiStringBuilder {
      *         or empty string if the color type doesn't support underline coloring
      */
     public static String underlineColorToAnsi(Color color) {
-        if (color instanceof Color.Indexed) {
+        if (color instanceof Color.Named) {
+            // Named colors delegate to their default value
+            return underlineColorToAnsi(((Color.Named) color).defaultValue());
+        } else if (color instanceof Color.Indexed) {
             int idx = ((Color.Indexed) color).index();
             return "58;5;" + idx;
         } else if (color instanceof Color.Rgb) {

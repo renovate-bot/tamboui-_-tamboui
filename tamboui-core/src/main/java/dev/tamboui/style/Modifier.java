@@ -8,6 +8,7 @@ package dev.tamboui.style;
  * Text style modifiers (SGR attributes).
  */
 public enum Modifier {
+    NORMAL(0),
     BOLD(1),
     DIM(2),
     ITALIC(3),
@@ -32,28 +33,15 @@ public enum Modifier {
     }
 
     /**
-     * Returns the ANSI SGR code to disable this modifier.
+     * Returns the implicit style name for this modifier.
+     * <p>
+     * Maps each modifier to the conventional style name used
+     * for style resolution (e.g., BOLD → "bold", CROSSED_OUT → "strikethrough").
+     *
+     * @return the style name
      */
-    public int resetCode() {
-        switch (this) {
-            case BOLD:
-            case DIM:
-                return 22;  // Both reset by 22
-            case ITALIC:
-                return 23;
-            case UNDERLINED:
-                return 24;
-            case SLOW_BLINK:
-            case RAPID_BLINK:
-                return 25;
-            case REVERSED:
-                return 27;
-            case HIDDEN:
-                return 28;
-            case CROSSED_OUT:
-                return 29;
-            default:
-                return 0;
-        }
+    public String implicitStyleName() {
+        return name().toLowerCase().replace('_', '-');
     }
+
 }

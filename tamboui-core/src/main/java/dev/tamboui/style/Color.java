@@ -121,6 +121,69 @@ public interface Color {
     }
 
     /**
+     * A named color reference that maps to a style resolver class.
+     * <p>
+     * When used with {@code .fg(Color.RED)}, the element automatically gets the style resolver class "red",
+     * allowing themes to override the color via standard class selectors like {@code .red { color: #FF5555; }}.
+     */
+    final class Named implements Color {
+        private final String name;
+        private final Color defaultValue;
+
+        /**
+         * Creates a named color.
+         *
+         * @param name the CSS class name (e.g., "red", "blue")
+         * @param defaultValue the fallback color when no CSS rule matches
+         */
+        public Named(String name, Color defaultValue) {
+            this.name = name;
+            this.defaultValue = defaultValue;
+        }
+
+        /**
+         * Returns the CSS class name for this color.
+         */
+        public String name() {
+            return name;
+        }
+
+        /**
+         * Returns the default color value.
+         */
+        public Color defaultValue() {
+            return defaultValue;
+        }
+
+        @Override
+        public Rgb toRgb() {
+            return defaultValue.toRgb();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Named)) {
+                return false;
+            }
+            Named named = (Named) o;
+            return name.equals(named.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Named[name=%s, default=%s]", name, defaultValue);
+        }
+    }
+
+    /**
      * RGB true color (24-bit).
      */
     final class Rgb implements Color {
@@ -203,26 +266,26 @@ public interface Color {
     // Singleton for reset
     Color RESET = new Reset();
 
-    // Standard ANSI colors
-    Color BLACK = new Ansi(AnsiColor.BLACK);
-    Color RED = new Ansi(AnsiColor.RED);
-    Color GREEN = new Ansi(AnsiColor.GREEN);
-    Color YELLOW = new Ansi(AnsiColor.YELLOW);
-    Color BLUE = new Ansi(AnsiColor.BLUE);
-    Color MAGENTA = new Ansi(AnsiColor.MAGENTA);
-    Color CYAN = new Ansi(AnsiColor.CYAN);
-    Color WHITE = new Ansi(AnsiColor.BRIGHT_WHITE);
-    Color GRAY = new Ansi(AnsiColor.WHITE);  // ANSI WHITE (7) renders as light gray
+    // Standard ANSI colors as Named (enabling CSS class-based theming)
+    Color BLACK = new Named("black", new Ansi(AnsiColor.BLACK));
+    Color RED = new Named("red", new Ansi(AnsiColor.RED));
+    Color GREEN = new Named("green", new Ansi(AnsiColor.GREEN));
+    Color YELLOW = new Named("yellow", new Ansi(AnsiColor.YELLOW));
+    Color BLUE = new Named("blue", new Ansi(AnsiColor.BLUE));
+    Color MAGENTA = new Named("magenta", new Ansi(AnsiColor.MAGENTA));
+    Color CYAN = new Named("cyan", new Ansi(AnsiColor.CYAN));
+    Color WHITE = new Named("white", new Ansi(AnsiColor.BRIGHT_WHITE));
+    Color GRAY = new Named("gray", new Ansi(AnsiColor.WHITE));  // ANSI WHITE (7) renders as light gray
 
-    // Bright ANSI colors
-    Color DARK_GRAY = new Ansi(AnsiColor.BRIGHT_BLACK);  // ANSI BRIGHT_BLACK (8) renders as dark gray
-    Color LIGHT_RED = new Ansi(AnsiColor.BRIGHT_RED);
-    Color LIGHT_GREEN = new Ansi(AnsiColor.BRIGHT_GREEN);
-    Color LIGHT_YELLOW = new Ansi(AnsiColor.BRIGHT_YELLOW);
-    Color LIGHT_BLUE = new Ansi(AnsiColor.BRIGHT_BLUE);
-    Color LIGHT_MAGENTA = new Ansi(AnsiColor.BRIGHT_MAGENTA);
-    Color LIGHT_CYAN = new Ansi(AnsiColor.BRIGHT_CYAN);
-    Color BRIGHT_WHITE = new Ansi(AnsiColor.BRIGHT_WHITE);
+    // Bright ANSI colors as Named
+    Color DARK_GRAY = new Named("dark-gray", new Ansi(AnsiColor.BRIGHT_BLACK));  // ANSI BRIGHT_BLACK (8) renders as dark gray
+    Color LIGHT_RED = new Named("light-red", new Ansi(AnsiColor.BRIGHT_RED));
+    Color LIGHT_GREEN = new Named("light-green", new Ansi(AnsiColor.BRIGHT_GREEN));
+    Color LIGHT_YELLOW = new Named("light-yellow", new Ansi(AnsiColor.BRIGHT_YELLOW));
+    Color LIGHT_BLUE = new Named("light-blue", new Ansi(AnsiColor.BRIGHT_BLUE));
+    Color LIGHT_MAGENTA = new Named("light-magenta", new Ansi(AnsiColor.BRIGHT_MAGENTA));
+    Color LIGHT_CYAN = new Named("light-cyan", new Ansi(AnsiColor.BRIGHT_CYAN));
+    Color BRIGHT_WHITE = new Named("bright-white", new Ansi(AnsiColor.BRIGHT_WHITE));
 
     // Factory methods
     /**
@@ -262,13 +325,16 @@ public interface Color {
      * Converts this color to RGB.
      * <p>
      * ANSI and indexed colors are converted using standard terminal color palettes.
-     * Reset colors default to white.
+     * Named colors delegate to their default value. Reset colors default to white.
      *
      * @return the RGB representation of this color
      */
     default Rgb toRgb() {
         if (this instanceof Rgb) {
             return (Rgb) this;
+        }
+        if (this instanceof Named) {
+            return ((Named) this).defaultValue().toRgb();
         }
         if (this instanceof Ansi) {
             return ansiToRgb(((Ansi) this).color());

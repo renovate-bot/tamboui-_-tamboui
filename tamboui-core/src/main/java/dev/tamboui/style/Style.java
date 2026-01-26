@@ -7,9 +7,11 @@ package dev.tamboui.style;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A complete style definition including foreground, background, and modifiers.
@@ -530,6 +532,29 @@ public final class Style {
      */
     public EnumSet<Modifier> subModifiers() {
         return EnumSet.copyOf(subModifiers);
+    }
+
+    /**
+     * Returns the style names implied by this style's Named colors and modifiers.
+     * <p>
+     * Named foreground colors contribute their name (e.g., "red"),
+     * Named background colors contribute "bg-" + name (e.g., "bg-red"),
+     * and modifiers contribute their {@link Modifier#implicitStyleName()} (e.g., "bold").
+     *
+     * @return an unmodifiable set of implied CSS class names
+     */
+    public Set<String> implicitStyleNames() {
+        Set<String> classes = new LinkedHashSet<>();
+        if (fg instanceof Color.Named) {
+            classes.add(((Color.Named) fg).name());
+        }
+        if (bg instanceof Color.Named) {
+            classes.add("bg-" + ((Color.Named) bg).name());
+        }
+        for (Modifier mod : addModifiers) {
+            classes.add(mod.implicitStyleName());
+        }
+        return Collections.unmodifiableSet(classes);
     }
 
     @Override

@@ -171,7 +171,9 @@ public enum TFxColorSpace {
      * Converts a color to RGB components [r, g, b].
      */
     int[] toRgbComponents(Color color) {
-        if (color instanceof Color.Rgb) {
+        if (color instanceof Color.Named) {
+            return toRgbComponents(((Color.Named) color).defaultValue());
+        } else if (color instanceof Color.Rgb) {
             Color.Rgb rgb = (Color.Rgb) color;
             return new int[]{rgb.r(), rgb.g(), rgb.b()};
         } else if (color instanceof Color.Ansi) {
