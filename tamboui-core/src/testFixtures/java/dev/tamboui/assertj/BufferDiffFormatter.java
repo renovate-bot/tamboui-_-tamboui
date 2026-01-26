@@ -165,7 +165,9 @@ final class BufferDiffFormatter {
         if (color == null) {
             return "Reset";
         }
-        if (color instanceof Color.Reset) {
+        if (color instanceof Color.Named) {
+            return ((Color.Named) color).name();
+        } else if (color instanceof Color.Reset) {
             return "Reset";
         } else if (color instanceof Color.Ansi) {
             return ((Color.Ansi) color).color().name();

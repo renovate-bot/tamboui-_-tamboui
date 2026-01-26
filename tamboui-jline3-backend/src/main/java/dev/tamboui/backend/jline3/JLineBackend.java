@@ -369,7 +369,9 @@ public class JLineBackend implements Backend {
     }
 
     private String colorToAnsi(Color color, boolean foreground) {
-        if (color instanceof Color.Reset) {
+        if (color instanceof Color.Named) {
+            return colorToAnsi(((Color.Named) color).defaultValue(), foreground);
+        } else if (color instanceof Color.Reset) {
             return foreground ? "39" : "49";
         } else if (color instanceof Color.Ansi) {
             AnsiColor c = ((Color.Ansi) color).color();
@@ -385,7 +387,9 @@ public class JLineBackend implements Backend {
     }
 
     private String underlineColorToAnsi(Color color) {
-        if (color instanceof Color.Indexed) {
+        if (color instanceof Color.Named) {
+            return underlineColorToAnsi(((Color.Named) color).defaultValue());
+        } else if (color instanceof Color.Indexed) {
             int idx = ((Color.Indexed) color).index();
             return "58;5;" + idx;
         } else if (color instanceof Color.Rgb) {

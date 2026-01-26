@@ -11,7 +11,9 @@ import dev.tamboui.style.Color;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Frame;
+import dev.tamboui.toolkit.component.Component;
 import dev.tamboui.toolkit.element.DefaultRenderContext;
+import dev.tamboui.toolkit.element.Element;
 import dev.tamboui.widgets.input.TextInputState;
 import dev.tamboui.widgets.input.TextAreaState;
 import dev.tamboui.widgets.scrollbar.ScrollbarState;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static dev.tamboui.assertj.BufferAssertions.assertThat;
 import static dev.tamboui.toolkit.Toolkit.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,6 +33,34 @@ import static org.assertj.core.api.Assertions.assertThat;
  * implemented via {@link dev.tamboui.toolkit.element.StyledElement#resolveEffectiveStyle}.
  */
 class ElementChildStyleCssTest {
+
+    /**
+     * Minimal Component that mimics ProgressCard's structure:
+     * Component → Panel (with cssParent) → Column → [Text, Text, Gauge]
+     */
+    static class TestProgressComponent extends Component<TestProgressComponent> {
+        private final double progress;
+        private final String statusCssClass;
+
+        TestProgressComponent(double progress, String statusCssClass) {
+            this.progress = progress;
+            this.statusCssClass = statusCssClass;
+        }
+
+        @Override
+        protected Element render() {
+            return panel(() -> column(
+                    text("Title").addClass("card-title").length(1),
+                    text("Desc").addClass("card-description").length(1),
+                    gauge(progress)
+                            .label("")
+                            .addClass("progress-" + statusCssClass)
+                            .fill()
+            ))
+                    .addClass(statusCssClass)
+                    .cssParent(this);
+        }
+    }
 
     private DefaultRenderContext context;
     private StyleEngine styleEngine;
@@ -158,7 +189,7 @@ class ElementChildStyleCssTest {
                 .render(frame, area, context);
 
             // Explicit style should override CSS
-            assertThat(buffer.get(0, 0).style().fg()).contains(Color.YELLOW);
+            assertThat(buffer).at(0, 0).hasForeground(Color.YELLOW);
         }
 
         @Test
@@ -173,7 +204,186 @@ class ElementChildStyleCssTest {
                 .render(frame, area, context);
 
             // Gauge should render (filled character)
-            assertThat(buffer.get(0, 0).symbol()).isEqualTo("█");
+            assertThat(buffer).at(0, 0).hasSymbol("█");
+        }
+
+        @Test
+        @DisplayName("CSS child selector applies color to gauge filled portion")
+        void cssChildSelectorAppliesColor() {
+            String css = "GaugeElement-filled { color: green; }";
+            styleEngine.addStylesheet("test", css);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 10, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            gauge(1.0)
+                .label("")
+                .render(frame, area, context);
+
+            // CSS should apply green foreground to filled cells
+            assertThat(buffer).at(0, 0).hasForeground(Color.GREEN);
+        }
+
+        @Test
+        @DisplayName("CSS descendant child selector applies color via class on gauge")
+        void cssDescendantChildSelectorAppliesColor() {
+            String css = ".progress-complete GaugeElement-filled { color: green; }";
+            styleEngine.addStylesheet("test", css);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 10, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            gauge(1.0)
+                .label("")
+                .addClass("progress-complete")
+                .render(frame, area, context);
+
+            // CSS descendant selector should apply green to filled cells
+            assertThat(buffer).at(0, 0).hasForeground(Color.GREEN);
+        }
+
+        @Test
+        @DisplayName("CSS descendant child selector applies color when gauge is nested in column")
+        void cssDescendantChildSelectorWorksNested() {
+            String css = ".progress-complete GaugeElement-filled { color: green; }";
+            styleEngine.addStylesheet("test", css);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 10, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            // Nest gauge in a column (like the demo does)
+            column(
+                gauge(1.0)
+                    .label("")
+                    .addClass("progress-complete")
+                    .fill()
+            ).render(frame, area, context);
+
+            // CSS descendant selector should still apply green when nested
+            assertThat(buffer).at(0, 0).hasForeground(Color.GREEN);
+        }
+
+        @Test
+        @DisplayName("CSS descendant child selector applies color in panel > column > gauge hierarchy")
+        void cssDescendantChildSelectorWorksDeeplyNested() {
+            String css = ".progress-complete GaugeElement-filled { color: green; }\n" +
+                         ".progress-in-progress GaugeElement-filled { color: yellow; }";
+            styleEngine.addStylesheet("test", css);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 10, 3);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            // Mimic demo structure: panel > column > gauge
+            panel(() -> column(
+                gauge(1.0)
+                    .label("")
+                    .addClass("progress-complete")
+                    .fill()
+            )).render(frame, area, context);
+
+            // Find a filled gauge cell (inside the panel border)
+            // Panel with borders takes 1 char on each side, so gauge content starts at x=1, y=1
+            assertThat(buffer).at(1, 1).hasForeground(Color.GREEN);
+        }
+    }
+
+    @Nested
+    @DisplayName("GaugeElement CSS child styling with full demo CSS")
+    class GaugeElementFullDemoCssTests {
+
+        private static final String DEMO_CSS =
+                "GaugeElement { background: #1a1a1a; }\n" +
+                ".card-title { color: cyan; text-style: bold; }\n" +
+                ".card-description { color: #888888; }\n" +
+                ".progress-complete GaugeElement-filled { color: green; }\n" +
+                ".progress-in-progress GaugeElement-filled { color: yellow; }\n" +
+                ".dim { text-style: dim; }\n" +
+                ".title { color: cyan; text-style: bold; }";
+
+        @Test
+        @DisplayName("CSS descendant child selector works with full demo CSS loaded")
+        void cssDescendantChildSelectorWithFullCss() {
+            styleEngine.addStylesheet("test", DEMO_CSS);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 10, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            gauge(1.0)
+                .label("")
+                .addClass("progress-complete")
+                .render(frame, area, context);
+
+            assertThat(buffer).at(0, 0).hasForeground(Color.GREEN);
+        }
+
+        @Test
+        @DisplayName("CSS descendant child selector in nested panel with full demo CSS")
+        void cssDescendantChildSelectorNestedWithFullCss() {
+            styleEngine.addStylesheet("test", DEMO_CSS);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 20, 5);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            // Mimic ProgressCard structure: panel > column > [title, description, gauge]
+            panel(() -> column(
+                text("Task Title").addClass("card-title").length(1),
+                text("Description").addClass("card-description").length(1),
+                gauge(1.0)
+                    .label("")
+                    .addClass("progress-complete")
+                    .fill()
+            )).render(frame, area, context);
+
+            // The gauge should be rendered inside the panel border
+            // Panel border is 1 char, title text is row 1, description row 2
+            // Gauge should be in row 3 (y=3 inside the panel, which is y=3 in buffer due to border)
+            // Actually, in a 5-row panel with border, inner area is rows 1-3
+            // Row 1: title, Row 2: description, Row 3: gauge
+            // Gauge cells should have green foreground
+            // Find a gauge cell - look for the filled block character
+            boolean foundGreenGauge = false;
+            for (int y = 0; y < 5; y++) {
+                for (int x = 0; x < 20; x++) {
+                    if ("█".equals(buffer.get(x, y).symbol())) {
+                        assertThat(buffer).at(x, y).hasForeground(Color.GREEN);
+                        foundGreenGauge = true;
+                        break;
+                    }
+                }
+                if (foundGreenGauge) break;
+            }
+            assertThat(foundGreenGauge).isTrue();
+        }
+
+        @Test
+        @DisplayName("CSS in-progress gauge has yellow fill")
+        void inProgressGaugeHasYellowFill() {
+            styleEngine.addStylesheet("test", DEMO_CSS);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 10, 1);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            gauge(0.5)
+                .label("")
+                .addClass("progress-in-progress")
+                .render(frame, area, context);
+
+            // First cell should be filled with yellow
+            assertThat(buffer).at(0, 0).hasForeground(Color.YELLOW);
         }
     }
 
@@ -344,6 +554,82 @@ class ElementChildStyleCssTest {
             // Default line number style is dim
             assertThat(buffer.get(0, 0).style().effectiveModifiers())
                 .contains(Modifier.DIM);
+        }
+    }
+
+    @Nested
+    @DisplayName("Component rendering path CSS child styling")
+    class ComponentRenderingPathCssTests {
+
+        private static final String DEMO_CSS =
+                "GaugeElement { background: #1a1a1a; }\n" +
+                ".card-title { color: cyan; text-style: bold; }\n" +
+                ".card-description { color: #888888; }\n" +
+                ".progress-complete GaugeElement-filled { color: green; }\n" +
+                ".progress-in-progress GaugeElement-filled { color: yellow; }\n" +
+                ".dim { text-style: dim; }\n" +
+                ".title { color: cyan; text-style: bold; }";
+
+        @Test
+        @DisplayName("CSS child selector works through Component rendering path with complete status")
+        void cssChildSelectorWorksThroughComponentComplete() {
+            styleEngine.addStylesheet("test", DEMO_CSS);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 20, 5);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            new TestProgressComponent(1.0, "complete")
+                    .render(frame, area, context);
+
+            // Find gauge cells (filled block character) and verify green foreground
+            // Panel border takes 1 char each side; title row 1, desc row 2, gauge row 3
+            // Gauge is at y=3 (border top=1, title=1, desc=1), x=1 (border left=1)
+            boolean foundGreenGauge = false;
+            for (int y = 0; y < area.height(); y++) {
+                for (int x = 0; x < area.width(); x++) {
+                    if ("\u2588".equals(buffer.get(x, y).symbol())) {
+                        assertThat(buffer).at(x, y).hasForeground(Color.GREEN);
+                        foundGreenGauge = true;
+                        break;
+                    }
+                }
+                if (foundGreenGauge) break;
+            }
+            assertThat(foundGreenGauge)
+                    .as("Expected to find gauge cells with green foreground in Component rendering path")
+                    .isTrue();
+        }
+
+        @Test
+        @DisplayName("CSS child selector works through Component rendering path with in-progress status")
+        void cssChildSelectorWorksThroughComponentInProgress() {
+            styleEngine.addStylesheet("test", DEMO_CSS);
+            styleEngine.setActiveStylesheet("test");
+
+            Rect area = new Rect(0, 0, 20, 5);
+            Buffer buffer = Buffer.empty(area);
+            Frame frame = Frame.forTesting(buffer);
+
+            new TestProgressComponent(0.5, "in-progress")
+                    .render(frame, area, context);
+
+            // Find gauge filled cells and verify yellow foreground
+            boolean foundYellowGauge = false;
+            for (int y = 0; y < area.height(); y++) {
+                for (int x = 0; x < area.width(); x++) {
+                    if ("\u2588".equals(buffer.get(x, y).symbol())) {
+                        assertThat(buffer).at(x, y).hasForeground(Color.YELLOW);
+                        foundYellowGauge = true;
+                        break;
+                    }
+                }
+                if (foundYellowGauge) break;
+            }
+            assertThat(foundYellowGauge)
+                    .as("Expected to find gauge cells with yellow foreground in Component rendering path")
+                    .isTrue();
         }
     }
 }

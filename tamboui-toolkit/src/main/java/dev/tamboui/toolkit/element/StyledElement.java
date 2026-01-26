@@ -186,20 +186,6 @@ public abstract class StyledElement<T extends StyledElement<T>> implements Eleme
         return style;
     }
 
-    /**
-     * Resolves the effective style by merging CSS and inline styles.
-     * CSS styles provide the base, inline styles override.
-     *
-     * @param cssResolver the CSS resolver (may be null)
-     * @return the effective style combining CSS and inline styles
-     */
-    private Style resolveEffectiveStyle(CssStyleResolver cssResolver) {
-        if (cssResolver != null) {
-            return cssResolver.toStyle().patch(style);
-        }
-        return style;
-    }
-
     // ═══════════════════════════════════════════════════════════════
     // Render template method
     // ═══════════════════════════════════════════════════════════════
@@ -231,7 +217,21 @@ public abstract class StyledElement<T extends StyledElement<T>> implements Eleme
 
         // Resolve CSS for this element
         CssStyleResolver cssResolver = context.resolveStyle(this).orElse(null);
-        Style effectiveStyle = resolveEffectiveStyle(cssResolver);
+        Style effectiveStyle;
+        if (cssResolver != null) {
+            Style cssStyle = cssResolver.toStyle();
+            // Named colors are soft defaults — strip them when CSS provides a color
+            Style overlay = style;
+            if (overlay.fg().orElse(null) instanceof Color.Named && cssStyle.fg().isPresent()) {
+                overlay = overlay.fg(null);
+            }
+            if (overlay.bg().orElse(null) instanceof Color.Named && cssStyle.bg().isPresent()) {
+                overlay = overlay.bg(null);
+            }
+            effectiveStyle = cssStyle.patch(overlay);
+        } else {
+            effectiveStyle = style;
+        }
 
         if (context instanceof DefaultRenderContext) {
             DefaultRenderContext ctx = (DefaultRenderContext) context;
@@ -559,7 +559,13 @@ public abstract class StyledElement<T extends StyledElement<T>> implements Eleme
 
     @Override
     public Set<String> cssClasses() {
-        return Collections.unmodifiableSet(cssClasses);
+        Set<String> implied = style.implicitStyleNames();
+        if (implied.isEmpty()) {
+            return Collections.unmodifiableSet(cssClasses);
+        }
+        Set<String> all = new LinkedHashSet<>(cssClasses);
+        all.addAll(implied);
+        return Collections.unmodifiableSet(all);
     }
 
     @Override

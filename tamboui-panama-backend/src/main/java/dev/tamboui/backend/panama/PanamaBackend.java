@@ -383,7 +383,9 @@ public class PanamaBackend implements Backend {
     }
 
     private void appendColorToAnsi(Color color, boolean foreground) {
-        if (color instanceof Color.Reset) {
+        if (color instanceof Color.Named named) {
+            appendColorToAnsi(named.defaultValue(), foreground);
+        } else if (color instanceof Color.Reset) {
             outputBuffer.appendInt(foreground ? 39 : 49);
         } else if (color instanceof Color.Ansi ansi) {
             outputBuffer.appendInt(foreground ? ansi.color().fgCode() : ansi.color().bgCode());
@@ -403,7 +405,10 @@ public class PanamaBackend implements Backend {
     }
 
     private void appendUnderlineColorToAnsi(Color color) {
-        if (color instanceof Color.Indexed indexed) {
+        if (color instanceof Color.Named named) {
+            appendUnderlineColorToAnsi(named.defaultValue());
+            return;
+        } else if (color instanceof Color.Indexed indexed) {
             outputBuffer.appendAscii("58;5;").appendInt(indexed.index());
         } else if (color instanceof Color.Rgb rgb) {
             outputBuffer.appendAscii("58;2;")

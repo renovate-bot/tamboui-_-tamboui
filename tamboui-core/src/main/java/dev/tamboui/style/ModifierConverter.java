@@ -40,6 +40,7 @@ public final class ModifierConverter implements PropertyConverter<Set<Modifier>>
         MODIFIER_MAP.put("bold", Modifier.BOLD);
         MODIFIER_MAP.put("dim", Modifier.DIM);
         MODIFIER_MAP.put("italic", Modifier.ITALIC);
+        MODIFIER_MAP.put("normal", Modifier.NORMAL);
         MODIFIER_MAP.put("underlined", Modifier.UNDERLINED);
         MODIFIER_MAP.put("underline", Modifier.UNDERLINED);
         MODIFIER_MAP.put("reversed", Modifier.REVERSED);
