@@ -514,7 +514,7 @@ public final class Panel extends ContainerElement<Panel> {
                 height += ((Constraint.Length) c).value();
             } else {
                 // Use preferredHeight for proper calculation
-                int preferred = child.preferredHeight(estimatedWidth, null);
+                int preferred = child.preferredHeight(estimatedWidth, RenderContext.empty());
                 height += preferred > 0 ? preferred : 1;
             }
         }
