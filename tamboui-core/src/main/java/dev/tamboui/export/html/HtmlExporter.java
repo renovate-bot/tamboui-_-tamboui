@@ -6,11 +6,12 @@ package dev.tamboui.export.html;
 
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.buffer.Cell;
-import dev.tamboui.export.ThemeColors;
+import dev.tamboui.export.ExportProperties;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
+import dev.tamboui.style.StylePropertyResolver;
 
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -22,12 +23,12 @@ import java.util.Objects;
  * <p>
  * Produces a full HTML document with a {@code <pre><code>} block. Styling is either embedded
  * in a stylesheet (with {@code <span class="r1">}) or inlined in spans ({@code <span style="...">}).
- * Uses {@link ThemeColors} for default colors (same as SVG export).
+ * Default colors come from {@link ExportProperties} or the options resolver (same as SVG export).
  *
  * <h2>Notes</h2>
  * <ul>
  *     <li>This is a pure string export; it does not require a backend.</li>
- *     <li>Colors are resolved via {@link Color#toRgb()} plus theme fallback.</li>
+ *     <li>Colors are resolved via {@link Color#toRgb()} plus {@link ExportProperties} defaults or options resolver.</li>
  * </ul>
  */
 public final class HtmlExporter {
@@ -57,13 +58,15 @@ public final class HtmlExporter {
         Objects.requireNonNull(buffer, "buffer");
         Objects.requireNonNull(region, "region");
         Objects.requireNonNull(options, "options");
-        Objects.requireNonNull(options.theme, "options.theme");
+
+        StylePropertyResolver effective = options.styles != null ? options.styles : StylePropertyResolver.empty();
+        Color.Rgb defaultForeground = effective.resolve(ExportProperties.EXPORT_FOREGROUND, null).toRgb();
+        Color.Rgb defaultBackground = effective.resolve(ExportProperties.EXPORT_BACKGROUND, null).toRgb();
 
         if (region.isEmpty()) {
-            return minimalHtml(options);
+            return minimalHtml(defaultForeground, defaultBackground);
         }
 
-        ThemeColors themeColors = options.theme;
         int widthCells = region.width();
         int heightCells = region.height();
         int baseX = region.x();
@@ -98,7 +101,7 @@ public final class HtmlExporter {
                     continue;
                 }
 
-                String htmlStyle = styleToHtmlCss(style, themeColors);
+                String htmlStyle = styleToHtmlCss(style, defaultForeground, defaultBackground);
                 String escaped = escapeHtml(text);
 
                 if (options.inlineStyles) {
@@ -131,8 +134,8 @@ public final class HtmlExporter {
             }
         }
 
-        String foreground = toHex(themeColors.foreground());
-        String background = toHex(themeColors.background());
+        String foreground = toHex(defaultForeground);
+        String background = toHex(defaultBackground);
 
         return DEFAULT_HTML_FORMAT
             .replace("{code}", code.toString())
@@ -141,10 +144,9 @@ public final class HtmlExporter {
             .replace("{background}", background);
     }
 
-    private static String minimalHtml(HtmlOptions options) {
-        ThemeColors theme = options.theme != null ? options.theme : ThemeColors.defaultTheme();
-        String fg = toHex(theme.foreground());
-        String bg = toHex(theme.background());
+    private static String minimalHtml(Color.Rgb defaultFg, Color.Rgb defaultBg) {
+        String fg = toHex(defaultFg);
+        String bg = toHex(defaultBg);
         return DEFAULT_HTML_FORMAT
             .replace("{code}", "")
             .replace("{stylesheet}", "")
@@ -152,12 +154,12 @@ public final class HtmlExporter {
             .replace("{background}", bg);
     }
 
-    private static String styleToHtmlCss(Style style, ThemeColors themeColors) {
+    private static String styleToHtmlCss(Style style, Color.Rgb defaultFg, Color.Rgb defaultBg) {
         EnumSet<Modifier> mods = style.effectiveModifiers();
         boolean reversed = mods.contains(Modifier.REVERSED);
 
-        Color.Rgb fg = style.fg().orElse(Color.RESET).equals(Color.RESET) ? themeColors.foreground() : style.fg().get().toRgb();
-        Color.Rgb bg = style.bg().orElse(Color.RESET).equals(Color.RESET) ? themeColors.background() : style.bg().get().toRgb();
+        Color.Rgb fg = style.fg().orElse(Color.RESET).equals(Color.RESET) ? defaultFg : style.fg().get().toRgb();
+        Color.Rgb bg = style.bg().orElse(Color.RESET).equals(Color.RESET) ? defaultBg : style.bg().get().toRgb();
 
         if (reversed) {
             Color.Rgb tmp = fg;

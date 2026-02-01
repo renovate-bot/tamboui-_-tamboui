@@ -6,7 +6,7 @@ package dev.tamboui.export.svg;
 
 import dev.tamboui.export.ExportOptions;
 import dev.tamboui.export.Formats;
-import dev.tamboui.export.ThemeColors;
+import dev.tamboui.style.StylePropertyResolver;
 
 /**
  * Options for SVG export. All values have reasonable defaults.
@@ -16,7 +16,7 @@ public final class SvgOptions implements ExportOptions {
 
     String title = "TamboUI";
     boolean chrome = true;
-    ThemeColors theme = ThemeColors.defaultTheme();
+    StylePropertyResolver styles;
     double fontAspectRatio = 0.61;
     String uniqueId;
 
@@ -48,13 +48,16 @@ public final class SvgOptions implements ExportOptions {
     }
 
     /**
-     * Sets the color theme.
+     * Sets the style property resolver for default export foreground/background.
+     * When {@code null} (default), export uses {@link dev.tamboui.export.ExportProperties}
+     * defaults (dark-theme). When set (e.g. from the toolkit style engine), the resolver
+     * supplies values for {@code export-foreground} and {@code export-background}.
      *
-     * @param theme the SVG color theme
+     * @param styles the style resolver, or {@code null} to use property defaults
      * @return this options instance
      */
-    public SvgOptions theme(ThemeColors theme) {
-        this.theme = theme;
+    public SvgOptions styles(StylePropertyResolver styles) {
+        this.styles = styles;
         return this;
     }
 

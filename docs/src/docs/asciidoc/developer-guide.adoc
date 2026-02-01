@@ -151,7 +151,6 @@ You can export a `Buffer` to SVG, HTML, or plain/ANSI text for screenshots, docu
 [source,java]
 ----
 import dev.tamboui.buffer.Buffer;
-import dev.tamboui.export.ThemeColors;
 import java.nio.file.Path;
 
 // Start from a buffer (e.g. after rendering widgets)
@@ -162,7 +161,7 @@ buffer.export().svg().toFile(Path.of("output.svg"));
 
 // Configure options via options(Consumer)
 buffer.export().svg()
-    .options(o -> o.title("My App").theme(ThemeColors.defaultTheme()))
+    .options(o -> o.title("My App"))
     .toFile(Path.of("output.svg"));
 
 // Export to string or bytes
@@ -240,23 +239,24 @@ if (area != null && !area.isEmpty()) {
 }
 ----
 
-=== Theme Colors
+=== Default export colors
 
-Export formats use a default foreground/background when a cell style does not specify colors (e.g. after RESET). Use `ThemeColors.defaultTheme()` for the built-in dark theme, or create your own:
+Export formats use a default foreground and background when a cell style does not specify colors (e.g. after RESET). When you do not pass a resolver, export uses those property defaults.
+
+To supply custom defaults (e.g. from the toolkit style engine), pass a `StylePropertyResolver` via `styles(...)`. The resolver can provide values for the properties `export-foreground` and `export-background`:
 
 [source,java]
 ----
-import dev.tamboui.export.ThemeColors;
+import dev.tamboui.export.ExportProperties;
 import dev.tamboui.style.Color;
+import dev.tamboui.style.StylePropertyResolver;
 
-ThemeColors dark = ThemeColors.defaultTheme();  // Rich-style dark theme
+// Use property defaults (dark theme) — no resolver
+buffer.export().svg().toFile(path);
 
-ThemeColors custom = new ThemeColors(
-    new Color.Rgb(240, 240, 240),   // foreground
-    new Color.Rgb(24, 24, 24)      // background
-);
-
-buffer.export().svg().options(o -> o.theme(custom)).toFile(path);
+// Custom defaults via a resolver (e.g. from toolkit StyleEngine)
+StylePropertyResolver myResolver = ...;  // e.g. styleEngine.resolver()
+buffer.export().svg().options(o -> o.styles(myResolver)).toFile(path);
 ----
 
 === SVG Export
@@ -267,14 +267,14 @@ Options (`SvgOptions`), via `.options(o -> ...)`:
 
 * `title(String)` — window/title text (default: `"TamboUI"`)
 * `chrome(boolean)` — include window frame, title, and traffic-light buttons (default: `true`); `false` for content only
-* `theme(ThemeColors)` — default foreground/background (default: `ThemeColors.defaultTheme()`)
+* `styles(StylePropertyResolver)` — style resolver for default export foreground/background (properties `export-foreground`, `export-background`); when `null` (default), uses `ExportProperties` defaults (dark theme)
 * `fontAspectRatio(double)` — character width-to-height ratio for layout (default: 0.61)
 * `uniqueId(String)` — prefix for CSS classes and clip paths, or `null` for auto-generated
 
 [source,java]
 ----
 buffer.export().svg()
-    .options(o -> o.title("Dashboard").theme(ThemeColors.defaultTheme()))
+    .options(o -> o.title("Dashboard"))
     .toFile(Path.of("dashboard.svg"));
 ----
 
@@ -284,7 +284,7 @@ HTML export produces a full HTML document with styled `<pre>` content. Styles ca
 
 Options (`HtmlOptions`):
 
-* `theme(ThemeColors)` — default foreground/background
+* `styles(StylePropertyResolver)` — style resolver for default export foreground/background (same as SVG); when `null` (default), uses `ExportProperties` defaults
 * `inlineStyles(boolean)` — `true` for inline styles on each span (single-file, larger); `false` for a stylesheet (default, smaller HTML)
 
 [source,java]

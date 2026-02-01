@@ -6,11 +6,12 @@ package dev.tamboui.export.svg;
 
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.buffer.Cell;
-import dev.tamboui.export.ThemeColors;
+import dev.tamboui.export.ExportProperties;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Modifier;
 import dev.tamboui.style.Style;
+import dev.tamboui.style.StylePropertyResolver;
 
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
@@ -32,7 +33,7 @@ import java.util.zip.Adler32;
  * <h2>Notes</h2>
  * <ul>
  *     <li>This is a pure string export; it does not require a backend.</li>
- *     <li>Colors are resolved via {@link Color#toRgb()} plus a simple theme fallback.</li>
+ *     <li>Colors are resolved via {@link Color#toRgb()} plus {@link ExportProperties} defaults or options resolver.</li>
  * </ul>
  */
 public final class SvgExporter {
@@ -62,13 +63,15 @@ public final class SvgExporter {
         Objects.requireNonNull(buffer, "buffer");
         Objects.requireNonNull(region, "region");
         Objects.requireNonNull(options, "options");
-        Objects.requireNonNull(options.theme, "options.theme");
+
+        StylePropertyResolver effective = options.styles != null ? options.styles : StylePropertyResolver.empty();
+        Color.Rgb defaultForeground = effective.resolve(ExportProperties.EXPORT_FOREGROUND, null).toRgb();
+        Color.Rgb defaultBackground = effective.resolve(ExportProperties.EXPORT_BACKGROUND, null).toRgb();
 
         if (region.isEmpty()) {
-            return minimalSvg(options);
+            return minimalSvg(options, defaultBackground);
         }
 
-        final ThemeColors themeColors = options.theme;
         final int widthCells = region.width();
         final int heightCells = region.height();
         final int baseX = region.x();
@@ -96,7 +99,7 @@ public final class SvgExporter {
         final int terminalWidth = (int) Math.ceil(widthCells * charWidth + paddingWidth);
         final int terminalHeight = (int) Math.ceil(heightCells * lineHeight + paddingHeight);
 
-        final String uniqueId = options.uniqueId != null ? options.uniqueId : "terminal-" + computeStableHash(buffer, region, themeColors);
+        final String uniqueId = options.uniqueId != null ? options.uniqueId : "terminal-" + computeStableHash(buffer, region, defaultForeground, defaultBackground);
 
         // Stable insertion order so class numbers are deterministic
         final Map<String, Integer> cssToClassNo = new LinkedHashMap<>();
@@ -124,7 +127,7 @@ public final class SvgExporter {
                 }
                 int runLen = x - runStart;
 
-                ResolvedColors colors = resolveColors(style, themeColors);
+                ResolvedColors colors = resolveColors(style, defaultForeground, defaultBackground);
                 boolean hasBackground = colors.hasBackground;
 
                 String css = styleToCss(style, colors);
@@ -185,8 +188,8 @@ public final class SvgExporter {
         }
 
         String chromeContent = options.chrome
-            ? buildChrome(uniqueId, options.title, themeColors, terminalWidth, terminalHeight, marginLeft, marginTop, charHeight)
-            : buildBackgroundOnly(themeColors, terminalWidth, terminalHeight, marginLeft, marginTop);
+            ? buildChrome(uniqueId, options.title, defaultForeground, defaultBackground, terminalWidth, terminalHeight, marginLeft, marginTop, charHeight)
+            : buildBackgroundOnly(defaultBackground, terminalWidth, terminalHeight, marginLeft, marginTop);
 
         // Match Rich template variables
         return DEFAULT_SVG_FORMAT
@@ -208,7 +211,7 @@ public final class SvgExporter {
     }
 
     private static String buildBackgroundOnly(
-        ThemeColors themeColors,
+        Color.Rgb defaultBg,
         int terminalWidth,
         int terminalHeight,
         int marginLeft,
@@ -217,7 +220,7 @@ public final class SvgExporter {
         return makeTag(
             "rect",
             null,
-            "fill", toHex(themeColors.background()),
+            "fill", toHex(defaultBg),
             "x", String.valueOf(marginLeft),
             "y", String.valueOf(marginTop),
             "width", String.valueOf(terminalWidth),
@@ -228,7 +231,8 @@ public final class SvgExporter {
     private static String buildChrome(
         String uniqueId,
         String windowTitle,
-        ThemeColors themeColors,
+        Color.Rgb defaultFg,
+        Color.Rgb defaultBg,
         int terminalWidth,
         int terminalHeight,
         int marginLeft,
@@ -238,7 +242,7 @@ public final class SvgExporter {
         String chrome = makeTag(
             "rect",
             null,
-            "fill", toHex(themeColors.background()),
+            "fill", toHex(defaultBg),
             "stroke", "rgba(255,255,255,0.35)",
             "stroke-width", "1",
             "x", String.valueOf(marginLeft),
@@ -255,7 +259,7 @@ public final class SvgExporter {
                 "text",
                 escapeText(windowTitle),
                 "class", uniqueId + "-title",
-                "fill", toHex(themeColors.foreground()),
+                "fill", toHex(defaultFg),
                 "text-anchor", "middle",
                 "x", String.valueOf(terminalWidth / 2),
                 "y", String.valueOf(marginTop + 33)
@@ -284,12 +288,12 @@ public final class SvgExporter {
         }
     }
 
-    private static ResolvedColors resolveColors(Style style, ThemeColors themeColors) {
+    private static ResolvedColors resolveColors(Style style, Color.Rgb defaultFg, Color.Rgb defaultBg) {
         EnumSet<Modifier> mods = style.effectiveModifiers();
         boolean reversed = mods.contains(Modifier.REVERSED);
 
-        Color.Rgb fg = style.fg().orElse(Color.RESET).equals(Color.RESET) ? themeColors.foreground() : style.fg().get().toRgb();
-        Color.Rgb bg = style.bg().orElse(Color.RESET).equals(Color.RESET) ? themeColors.background() : style.bg().get().toRgb();
+        Color.Rgb fg = style.fg().orElse(Color.RESET).equals(Color.RESET) ? defaultFg : style.fg().get().toRgb();
+        Color.Rgb bg = style.bg().orElse(Color.RESET).equals(Color.RESET) ? defaultBg : style.bg().get().toRgb();
 
         if (reversed) {
             Color.Rgb tmp = fg;
@@ -426,23 +430,22 @@ public final class SvgExporter {
         return String.format("#%02x%02x%02x", rgb.r(), rgb.g(), rgb.b());
     }
 
-    private static String minimalSvg(SvgOptions options) {
-        ThemeColors theme = options.theme != null ? options.theme : ThemeColors.defaultTheme();
+    private static String minimalSvg(SvgOptions options, Color.Rgb defaultBg) {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             + "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1\" height=\"1\" viewBox=\"0 0 1 1\">"
-            + "<rect width=\"1\" height=\"1\" fill=\"" + toHex(theme.background()) + "\"/>"
+            + "<rect width=\"1\" height=\"1\" fill=\"" + toHex(defaultBg) + "\"/>"
             + "</svg>";
     }
 
-    private static String computeStableHash(Buffer buffer, Rect region, ThemeColors themeColors) {
+    private static String computeStableHash(Buffer buffer, Rect region, Color.Rgb defaultFg, Color.Rgb defaultBg) {
         Adler32 adler32 = new Adler32();
         adler32.update((byte) 1);
-        adler32.update((byte) themeColors.background().r());
-        adler32.update((byte) themeColors.background().g());
-        adler32.update((byte) themeColors.background().b());
-        adler32.update((byte) themeColors.foreground().r());
-        adler32.update((byte) themeColors.foreground().g());
-        adler32.update((byte) themeColors.foreground().b());
+        adler32.update((byte) defaultBg.r());
+        adler32.update((byte) defaultBg.g());
+        adler32.update((byte) defaultBg.b());
+        adler32.update((byte) defaultFg.r());
+        adler32.update((byte) defaultFg.g());
+        adler32.update((byte) defaultFg.b());
 
         int w = region.width();
         int h = region.height();
@@ -452,7 +455,7 @@ public final class SvgExporter {
             for (int x = 0; x < w; x++) {
                 Cell cell = buffer.get(baseX + x, baseY + y);
                 Style s = cell.style();
-                ResolvedColors colors = resolveColors(s, themeColors);
+                ResolvedColors colors = resolveColors(s, defaultFg, defaultBg);
                 adler32.update(cell.symbol().getBytes(StandardCharsets.UTF_8));
                 adler32.update((byte) 0);
                 adler32.update(colors.foregroundHex.getBytes(StandardCharsets.US_ASCII));
