@@ -169,6 +169,9 @@
     "todo-list-demo": {
       "script-ref": "tamboui-widgets/demos/todo-list-demo/src/main/java/dev/tamboui/demo/TodoListDemo.java"
     },
+    "tree-widget-demo": {
+      "script-ref": "tamboui-widgets/demos/tree-widget-demo/src/main/java/dev/tamboui/demo/TreeWidgetDemo.java"
+    },
     "wavetext-demo": {
       "script-ref": "tamboui-widgets/demos/wavetext-demo/src/main/java/dev/tamboui/demo/WaveTextDemo.java"
     }
