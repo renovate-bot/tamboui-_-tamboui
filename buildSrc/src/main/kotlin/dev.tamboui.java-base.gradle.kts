@@ -50,11 +50,12 @@ tasks.withType<Javadoc>().configureEach {
 
 spotless {
     java {
+        // disable for now as too many conflicts.
         // Import order is configurable via config/spotless/eclipse-import-order.txt
-        importOrderFile(rootProject.file("config/spotless/eclipse-import-order.txt"))
-        removeUnusedImports()
+       //importOrderFile(rootProject.file("config/spotless/eclipse-import-order.txt"))
+       // removeUnusedImports()
 
-        eclipse().configFile(rootProject.file("config/spotless/eclipse-format.xml"))
+        //eclipse().configFile(rootProject.file("config/spotless/eclipse-format.xml"))
        // formatAnnotations()
     }
 }
