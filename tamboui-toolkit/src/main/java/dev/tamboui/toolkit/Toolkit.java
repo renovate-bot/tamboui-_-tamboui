@@ -32,7 +32,9 @@ import dev.tamboui.toolkit.elements.TabsElement;
 import dev.tamboui.toolkit.elements.TextElement;
 import dev.tamboui.toolkit.elements.TextAreaElement;
 import dev.tamboui.toolkit.elements.TextInputElement;
+import dev.tamboui.toolkit.elements.TreeElement;
 import dev.tamboui.toolkit.elements.WaveTextElement;
+import dev.tamboui.widgets.tree.TreeNode;
 import dev.tamboui.toolkit.elements.RichTextElement;
 import dev.tamboui.toolkit.elements.RichTextAreaElement;
 import dev.tamboui.toolkit.elements.MarkupTextElement;
@@ -1051,6 +1053,40 @@ public final class Toolkit {
      */
     public static ScrollbarElement scrollbar() {
         return new ScrollbarElement();
+    }
+
+
+    // ==================== Tree ====================
+
+    /**
+     * Creates a tree with the given root nodes.
+     * <pre>{@code
+     * tree(
+     *     TreeNode.of("src",
+     *         TreeNode.of("main"),
+     *         TreeNode.of("test")).expanded(),
+     *     TreeNode.of("README.md").leaf()
+     * ).title("Project").rounded()
+     * }</pre>
+     *
+     * @param roots the root nodes
+     * @param <T> the data type
+     * @return a new tree element
+     */
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    public static <T> TreeElement<T> tree(TreeNode<T>... roots) {
+        return new TreeElement<>(roots);
+    }
+
+    /**
+     * Creates an empty tree.
+     *
+     * @param <T> the data type
+     * @return a new empty tree element
+     */
+    public static <T> TreeElement<T> tree() {
+        return new TreeElement<>();
     }
 
     // ==================== Spinner ====================
