@@ -233,7 +233,9 @@ public abstract class UpdateJBangCatalogTask extends DefaultTask {
     private void verifyBuilds(Set<String> aliases) {
         getLogger().lifecycle("Verifying builds for {} aliases...", aliases.size());
 
-        var failedAliases = aliases.parallelStream()
+        // Cannot use parallelStream due to JBang dependency resolution
+        // writing to its cache concurrently, which causes all sorts of issues.
+        var failedAliases = aliases.stream()
                 .map(alias -> {
                     getLogger().lifecycle("Building alias: {}", alias);
                     if (!buildAlias(alias)) {
