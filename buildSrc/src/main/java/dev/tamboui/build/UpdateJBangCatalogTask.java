@@ -5,6 +5,7 @@
 package dev.tamboui.build;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.ListProperty;
@@ -12,11 +13,11 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.options.Option;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.options.Option;
 import org.gradle.process.ExecOperations;
 import org.gradle.process.ExecResult;
 
@@ -25,11 +26,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -79,7 +80,7 @@ public abstract class UpdateJBangCatalogTask extends DefaultTask {
      * @return the verify builds property
      */
     @Option(option = "verify-builds", description = "Verify builds after writing the catalog")
-    @Input 
+    @Input
     @Optional
     public abstract Property<Boolean> getVerifyBuilds();
 
@@ -229,19 +230,21 @@ public abstract class UpdateJBangCatalogTask extends DefaultTask {
      *
      * @param aliases the set of alias names to verify
      */
-    private void verifyBuilds(java.util.Set<String> aliases) {
+    private void verifyBuilds(Set<String> aliases) {
         getLogger().lifecycle("Verifying builds for {} aliases...", aliases.size());
-        List<String> failedAliases = new ArrayList<>();
 
-        for (String alias : aliases) {
-            getLogger().lifecycle("Building alias: {}", alias);
-            if (!buildAlias(alias)) {
-                failedAliases.add(alias);
-            }
-        }
+        var failedAliases = aliases.parallelStream()
+                .map(alias -> {
+                    getLogger().lifecycle("Building alias: {}", alias);
+                    if (!buildAlias(alias)) {
+                        return alias;
+                    }
+                    return null;
+                }).filter(Objects::nonNull)
+                .toList();
 
         if (!failedAliases.isEmpty()) {
-            getLogger().error("Build verification failed for {} alias(es): {}", failedAliases.size(), String.join(", ", failedAliases));
+            throw new GradleException(String.format("Build verification failed for %d alias(es): %s", failedAliases.size(), String.join(", ", failedAliases)));
         } else {
             getLogger().lifecycle("All {} aliases built successfully", aliases.size());
         }
@@ -256,6 +259,7 @@ public abstract class UpdateJBangCatalogTask extends DefaultTask {
     private boolean buildAlias(String aliasName) {
         try {
             ExecResult result = getExecOperations().exec(execSpec -> {
+                execSpec.environment("JBANG_CACHE_DIR", getTemporaryDir().toPath().resolve("jbang-cache/" + aliasName).toString());
                 execSpec.commandLine(
                         "jbang", "build",
                         "-C=-Xdiags:compact",
