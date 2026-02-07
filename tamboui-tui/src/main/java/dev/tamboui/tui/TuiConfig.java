@@ -9,8 +9,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
+import dev.tamboui.terminal.Backend;
+import dev.tamboui.terminal.BackendFactory;
 import dev.tamboui.tui.bindings.BindingSets;
 import dev.tamboui.tui.bindings.Bindings;
 import dev.tamboui.tui.error.RenderErrorHandler;
@@ -43,6 +46,7 @@ public final class TuiConfig {
     private final PrintStream errorOutput;
     private final boolean fpsOverlayEnabled;
     private final List<PostRenderProcessor> postRenderProcessors;
+    private final Backend backend;
     private final ScheduledExecutorService scheduler;
 
     /**
@@ -63,6 +67,7 @@ public final class TuiConfig {
      * @param errorOutput the output stream for error logging
      * @param fpsOverlayEnabled whether to show the FPS overlay
      * @param postRenderProcessors list of post-render processors
+     * @param backend the backend to use (optional)
      * @param scheduler external scheduler to use, or null to create an internal one
      */
     public TuiConfig(
@@ -78,7 +83,8 @@ public final class TuiConfig {
             RenderErrorHandler errorHandler,
             PrintStream errorOutput,
             boolean fpsOverlayEnabled,
-            List<PostRenderProcessor> postRenderProcessors,
+            List<PostRenderProcessor> postRenderProcessors, 
+            Backend backend,
             ScheduledExecutorService scheduler
     ) {
         this.rawMode = rawMode;
@@ -96,6 +102,7 @@ public final class TuiConfig {
         this.postRenderProcessors = postRenderProcessors != null
                 ? Collections.unmodifiableList(new ArrayList<>(postRenderProcessors))
                 : Collections.emptyList();
+        this.backend = backend;
         this.scheduler = scheduler;
     }
 
@@ -122,8 +129,9 @@ public final class TuiConfig {
                 System.err,                  // errorOutput
                 false,                       // fpsOverlayEnabled
                 Collections.emptyList(),     // postRenderProcessors
+                null,                          // backend (allows for lazy backend creation)
                 null                         // scheduler
-        );
+            );
     }
 
     /**
@@ -283,6 +291,18 @@ public final class TuiConfig {
     }
 
     /**
+     * Returns the configured backend, or null if not set.
+     * <p>
+     * If null, a backend will be created using {@link BackendFactory#create()}
+     * when the TUI is started.
+     *
+     * @return the configured backend, or null
+     */
+    public Backend backend() {
+        return backend;
+    }
+
+    /**
      * Returns the externally-managed scheduler, or null if the runner should create its own.
      * <p>
      * When an external scheduler is provided, the runner will NOT shut it down on close -
@@ -311,7 +331,8 @@ public final class TuiConfig {
                 && (tickRate != null ? tickRate.equals(that.tickRate) : that.tickRate == null)
                 && (resizeGracePeriod != null ? resizeGracePeriod.equals(that.resizeGracePeriod) : that.resizeGracePeriod == null)
                 && bindings.equals(that.bindings)
-                && fpsOverlayEnabled == that.fpsOverlayEnabled;
+                && fpsOverlayEnabled == that.fpsOverlayEnabled
+                && Objects.equals(backend, that.backend);
     }
 
     @Override
@@ -325,6 +346,7 @@ public final class TuiConfig {
         result = 31 * result + (resizeGracePeriod != null ? resizeGracePeriod.hashCode() : 0);
         result = 31 * result + bindings.hashCode();
         result = 31 * result + Boolean.hashCode(fpsOverlayEnabled);
+        result = 31 * result + Objects.hashCode(backend);
         return result;
     }
 
@@ -362,9 +384,23 @@ public final class TuiConfig {
         private PrintStream errorOutput = System.err;
         private boolean fpsOverlayEnabled = false;
         private final List<PostRenderProcessor> postRenderProcessors = new ArrayList<>();
+        private Backend backend;
         private ScheduledExecutorService scheduler;
 
         private Builder() {
+        }
+
+        /**
+         * Sets the backend to use.
+         * <p>
+         * If not set, a backend will be created using {@link BackendFactory#create()}.
+         *
+         * @param backend the backend to use
+         * @return this builder
+         */
+        public Builder backend(Backend backend) {
+            this.backend = backend;
+            return this;
         }
 
         /**
@@ -588,6 +624,7 @@ public final class TuiConfig {
                     errorOutput,
                     fpsOverlayEnabled,
                     postRenderProcessors,
+                    backend,
                     scheduler
             );
         }
