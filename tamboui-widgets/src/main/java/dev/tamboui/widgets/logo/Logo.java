@@ -104,18 +104,28 @@ public final class Logo implements Widget {
      */
     public enum Size {
         /**
-         * A tiny logo (2 lines).
+         * A normal logo (4 lines).
          *
-         * <pre>
-         * ▜▘▗▀▖▛▜▜ ▙▄▖▗▀▖▌ ▌ ▜▘
-         * ▐ ▐▀▌▌▐▐ ▙▄▘▝▄▘▝▄▘ ▟▖
-         * </pre>
          */
-        TINY {
+        NORMAL {
             @Override
             String getText() {
-                return  "▜▘▗▀▖▛▜▜ ▙▄▖▗▀▖▌ ▌ ▜▘\n" +
-                        "▐ ▐▀▌▌▐▐ ▙▄▘▝▄▘▝▄▘ ▟▖\n";
+
+                return  "▀▛▘    ▐    ▐ ▐▝▜▀\n"
+                      + " ▌▝▚▐▜▚▐▀▖▞▚▐ ▐ ▐\n"
+                      + " ▌▞▜▐▐▐▐ ▌▌▐▐ ▐ ▐\n"
+                      + " ▘▝▀▝▝▝ ▀ ▝▘ ▀▘▝▀▀\n";
+            }
+        },
+         /**
+             * A tiny logo (2 lines).
+             */
+        TINY {
+           
+            @Override
+            String getText() {
+                return  "⠉⡏⠡⢄⢠⢤⢄⢸⠤⡀⡠⢄⢸⠀⢸⠈⢹⠉\n"
+                      + "⠀⠇⠪⠽⠸⠸⠸⠘⠤⠃⠣⠜⠘⠤⠜⠠⠼⠤\n";
             }
         };
 

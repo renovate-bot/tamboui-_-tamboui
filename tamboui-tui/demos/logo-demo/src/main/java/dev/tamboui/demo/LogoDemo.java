@@ -28,9 +28,9 @@ public class LogoDemo {
      * @throws Exception on unexpected error
      */
     public static void main(String[] args) throws Exception {
-        Logo.Size size = args.length > 0 && "small".equals(args[0]) 
-            ? Logo.Size.TINY  // Note: SMALL not yet implemented
-            : Logo.Size.TINY;
+        Logo.Size size = args.length > 0 && "tiny".equals(args[0]) 
+            ? Logo.Size.TINY 
+            : Logo.Size.NORMAL;
 
         try (Backend backend = BackendFactory.create()) {
             backend.enableRawMode();
