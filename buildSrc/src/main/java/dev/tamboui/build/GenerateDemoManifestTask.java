@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Task to generate a JSON manifest file listing all demos with their main classes.
@@ -33,13 +34,15 @@ public abstract class GenerateDemoManifestTask extends DefaultTask {
         private final String description;
         private final String module;
         private final String mainClass;
+        private final Set<String> tags;
 
-        public DemoEntry(String id, String displayName, String description, String module, String mainClass) {
+        public DemoEntry(String id, String displayName, String description, String module, String mainClass, Set<String> tags) {
             this.id = id;
             this.displayName = displayName;
             this.description = description;
             this.module = module;
             this.mainClass = mainClass;
+            this.tags = tags;
         }
 
         public String getId() {
@@ -60,6 +63,10 @@ public abstract class GenerateDemoManifestTask extends DefaultTask {
 
         public String getMainClass() {
             return mainClass;
+        }
+
+        public Set<String> getTags() {
+            return tags;
         }
     }
 
@@ -99,11 +106,22 @@ public abstract class GenerateDemoManifestTask extends DefaultTask {
             sb.append("      \"displayName\": ").append(jsonString(demo.getDisplayName())).append(",\n");
             sb.append("      \"description\": ").append(jsonString(demo.getDescription())).append(",\n");
             sb.append("      \"module\": ").append(jsonString(demo.getModule())).append(",\n");
-            sb.append("      \"mainClass\": ").append(jsonString(demo.getMainClass())).append("\n");
+            sb.append("      \"mainClass\": ").append(jsonString(demo.getMainClass())).append(",\n");
+            sb.append("      \"tags\": ");
+            boolean firstTag = true;
+            sb.append("\"");
+            for (String tag : demo.getTags()) {
+                if (!firstTag) {
+                    sb.append(", ");
+                }
+                firstTag = false;
+                sb.append(tag);
+            }
+            sb.append("\"\n");
             sb.append("    }");
         }
 
-        sb.append("\n  ]\n");
+        sb.append("\"\n  ]\n");
         sb.append("}");
         return sb.toString();
     }

@@ -16,11 +16,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,8 @@ import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Color;
 import dev.tamboui.style.Style;
 import dev.tamboui.terminal.Frame;
+import dev.tamboui.text.MarkupParser;
+import dev.tamboui.text.Text;
 import dev.tamboui.tui.InlineTuiConfig;
 import dev.tamboui.tui.InlineTuiRunner;
 import dev.tamboui.tui.event.KeyEvent;
@@ -71,7 +75,8 @@ public class DemoLauncher {
         private final String description;
         private final String module;
         private final String mainClass;
-
+        private final Set<String> tags;
+        
         /**
          * Creates a new demo entry.
          * @param id          the unique demo ID (used for CLI)
@@ -79,13 +84,15 @@ public class DemoLauncher {
          * @param description a brief description of the demo
          * @param module      the module/category this demo belongs to
          * @param mainClass   the fully qualified main class to launch for this demo
+         * @param tags        the tags associated with this demo
          */
-        DemoEntry(String id, String displayName, String description, String module, String mainClass) {
+        DemoEntry(String id, String displayName, String description, String module, String mainClass, Set<String> tags) {
             this.id = id;
             this.displayName = displayName;
             this.description = description;
             this.module = module;
             this.mainClass = mainClass;
+            this.tags = tags;
         }
 
         public String id() {
@@ -106,6 +113,10 @@ public class DemoLauncher {
 
         public String mainClass() {
             return mainClass;
+        }
+
+        public Set<String> tags() {
+            return tags;
         }
 
         @Override
@@ -218,9 +229,10 @@ public class DemoLauncher {
                     String description = extractField(obj, "description");
                     String module = extractField(obj, "module");
                     String mainClass = extractField(obj, "mainClass");
+                    Set<String> tags = extractTags(obj);
 
                     if (id != null && mainClass != null) {
-                        demos.put(id, new DemoEntry(id, displayName, description, module, mainClass));
+                        demos.put(id, new DemoEntry(id, displayName, description, module, mainClass, tags));
                     }
                 }
 
@@ -229,6 +241,14 @@ public class DemoLauncher {
         }
 
         return demos;
+    }
+
+    private static Set<String> extractTags(String json) {
+        String tags = extractField(json, "tags");
+        if (tags == null) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(tags.split(",")).map(String::trim).collect(Collectors.toSet());
     }
 
     private static String extractField(String json, String field) {
@@ -436,7 +456,8 @@ public class DemoLauncher {
                     if (demo.id().toLowerCase().contains(filter) ||
                             demo.displayName().toLowerCase().contains(filter) ||
                             (demo.description() != null && demo.description().toLowerCase().contains(filter)) ||
-                            demo.module().toLowerCase().contains(filter)) {
+                            demo.module().toLowerCase().contains(filter) ||
+                            demo.tags().stream().anyMatch(tag -> tag.toLowerCase().contains(filter))) {
                         filtered.add(demo);
                     }
                 }
@@ -543,7 +564,8 @@ public class DemoLauncher {
                                             if (demo.id().toLowerCase().contains(filter) ||
                                                     demo.displayName().toLowerCase().contains(filter) ||
                                                     (demo.description() != null && demo.description().toLowerCase().contains(filter)) ||
-                                                    demo.module().toLowerCase().contains(filter)) {
+                                                    demo.module().toLowerCase().contains(filter) ||
+                                                    demo.tags().stream().anyMatch(tag -> tag.toLowerCase().contains(filter))) {
                                                 filtered.add(demo);
                                             }
                                         }
@@ -671,8 +693,13 @@ public class DemoLauncher {
             String description = demo.description() != null && !demo.description().isEmpty()
                     ? " - " + demo.description()
                     : "";
-            String itemText = String.format("%s: %s%s", demo.module(), demo.displayName(), description);
-            items.add(ListItem.from(itemText));
+            String itemText = String.format("[dim]%s[/]: [bold]%s[/][dim]%s[/]", demo.module(), demo.displayName(), description);
+           /*  if (!demo.tags().isEmpty()) {
+                itemText += "\n";
+                itemText += " [blue]" + String.join(", ", demo.tags()) + "[/blue]";
+            }*/
+            Text markup = MarkupParser.parse(itemText);
+            items.add(ListItem.from(markup));
         }
 
         ListWidget list = ListWidget.builder()

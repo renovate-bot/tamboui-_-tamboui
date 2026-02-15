@@ -37,7 +37,8 @@ data class DemoInfo(
     var displayName: String = "",
     var description: String = "",
     var module: String = "",
-    var mainClass: String = ""
+    var mainClass: String = "",
+    var tags: Set<String> = emptySet()
 )
 
 // Map to collect demo info during configuration
@@ -73,6 +74,7 @@ rootProject.allprojects {
                     demoInfo.description = ext?.description?.orNull ?: ""
                     demoInfo.module = ext?.module?.orNull ?: "Other"
                     demoInfo.mainClass = app?.mainClass?.orNull ?: ""
+                    demoInfo.tags = ext?.tags?.orNull ?: emptySet()
                 }
             }
         }
@@ -92,7 +94,8 @@ val generateDemoManifest = tasks.register<GenerateDemoManifestTask>("generateDem
                     info.displayName,
                     info.description,
                     info.module,
-                    info.mainClass
+                    info.mainClass,
+                    info.tags
                 )
             }
     })
