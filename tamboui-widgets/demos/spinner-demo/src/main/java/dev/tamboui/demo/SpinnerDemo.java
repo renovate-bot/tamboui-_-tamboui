@@ -8,6 +8,9 @@
  */
 package dev.tamboui.demo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import dev.tamboui.layout.Constraint;
 import dev.tamboui.layout.Layout;
 import dev.tamboui.layout.Rect;
@@ -20,7 +23,6 @@ import dev.tamboui.terminal.Terminal;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.text.Text;
-import dev.tamboui.widgets.braille.BraillePatterns;
 import dev.tamboui.widgets.block.Block;
 import dev.tamboui.widgets.block.BorderType;
 import dev.tamboui.widgets.block.Borders;
@@ -34,60 +36,47 @@ import dev.tamboui.widgets.spinner.SpinnerStyle;
 /**
  * Demo TUI application showcasing the Spinner widget.
  * <p>
- * Demonstrates all built-in spinner styles:
- * <ul>
- *   <li>DOTS - Braille dot pattern</li>
- *   <li>LINE - Classic -\|/ spinner</li>
- *   <li>ARC - Quarter-circle characters</li>
- *   <li>CIRCLE - Clock-position circle</li>
- *   <li>BOUNCING_BAR - Bouncing bar effect</li>
- *   <li>TOGGLE - Two-state toggle</li>
- *   <li>Custom frames</li>
- * </ul>
+ * Demonstrates all built-in spinner styles including braille-based patterns.
  */
 public class SpinnerDemo {
 
-    private static final Color CYAN = Color.rgb(0, 180, 216);
-    private static final Color GREEN = Color.rgb(46, 204, 113);
-    private static final Color YELLOW = Color.rgb(241, 196, 15);
-    private static final Color MAGENTA = Color.rgb(155, 89, 182);
-    private static final Color BLUE = Color.rgb(52, 152, 219);
-    private static final Color RED = Color.rgb(231, 76, 60);
-    private static final Color ORANGE = Color.rgb(230, 126, 34);
+    private static final Color[] COLORS = {
+        Color.rgb(0, 180, 216),   // cyan
+        Color.rgb(46, 204, 113),  // green
+        Color.rgb(241, 196, 15),  // yellow
+        Color.rgb(155, 89, 182),  // magenta
+        Color.rgb(52, 152, 219),  // blue
+        Color.rgb(231, 76, 60),   // red
+        Color.rgb(230, 126, 34),  // orange
+    };
 
-    private boolean running = true;
-    private long frameCount = 0;
-
-    // Each spinner needs its own state to animate independently
-    private final SpinnerState dotsState = new SpinnerState();
-    private final SpinnerState lineState = new SpinnerState();
-    private final SpinnerState arcState = new SpinnerState();
-    private final SpinnerState circleState = new SpinnerState();
-    private final SpinnerState bouncingBarState = new SpinnerState();
-    private final SpinnerState toggleState = new SpinnerState();
-    private final SpinnerState gaugeState = new SpinnerState();
-    private final SpinnerState verticalGaugeState = new SpinnerState();
-    private final SpinnerState arrowsState = new SpinnerState();
-    private final SpinnerState clockState = new SpinnerState();
-    private final SpinnerState moonState = new SpinnerState();
-    private final SpinnerState squareCornersState = new SpinnerState();
-    private final SpinnerState growingDotsState = new SpinnerState();
-    private final SpinnerState bouncingBallState = new SpinnerState();
-    private final SpinnerState customState = new SpinnerState();
-    private final SpinnerState brailleScanState = new SpinnerState();
-    private final SpinnerState brailleBreatheState = new SpinnerState();
-    private final SpinnerState brailleDnaState = new SpinnerState();
-    private final SpinnerState brailleRainState = new SpinnerState();
-    private final SpinnerState brailleOrbitState = new SpinnerState();
-    private final SpinnerState brailleWaveRowsState = new SpinnerState();
-    private final SpinnerState brailleHelixState = new SpinnerState();
-
-    // Custom frame set example
+    /** Custom frame set example. */
     private static final SpinnerFrameSet CUSTOM_FRAMES = SpinnerFrameSet.of(
-            "◐", "◓", "◑", "◒"  // rotating half-circle
+            "\u25d0", "\u25d3", "\u25d1", "\u25d2"  // rotating half-circle
     );
 
+    private boolean running = true;
+    private long frameCount;
+
+    private record SpinnerEntry(String label, Spinner spinner, SpinnerState state) { }
+
+    private final List<SpinnerEntry> entries = new ArrayList<>();
+
     private SpinnerDemo() {
+        // Built-in styles
+        for (SpinnerStyle style : SpinnerStyle.values()) {
+            entries.add(new SpinnerEntry(
+                    style.name(),
+                    Spinner.builder().spinnerStyle(style)
+                            .style(Style.EMPTY.fg(COLORS[entries.size() % COLORS.length])).build(),
+                    new SpinnerState()));
+        }
+        // Custom frame set
+        entries.add(new SpinnerEntry(
+                "Custom FrameSet",
+                Spinner.builder().frameSet(CUSTOM_FRAMES)
+                        .style(Style.EMPTY.fg(COLORS[entries.size() % COLORS.length])).build(),
+                new SpinnerState()));
     }
 
     /**
@@ -112,9 +101,7 @@ public class SpinnerDemo {
 
             Terminal<Backend> terminal = new Terminal<>(backend);
 
-            backend.onResize(() -> {
-                terminal.draw(this::ui);
-            });
+            backend.onResize(() -> terminal.draw(this::ui));
 
             while (running) {
                 terminal.draw(this::ui);
@@ -124,36 +111,12 @@ public class SpinnerDemo {
                     running = false;
                 }
 
-                // Advance all states
-                advanceStates();
+                for (SpinnerEntry e : entries) {
+                    e.state().advance();
+                }
                 frameCount++;
             }
         }
-    }
-
-    private void advanceStates() {
-        dotsState.advance();
-        lineState.advance();
-        arcState.advance();
-        circleState.advance();
-        bouncingBarState.advance();
-        toggleState.advance();
-        gaugeState.advance();
-        verticalGaugeState.advance();
-        arrowsState.advance();
-        clockState.advance();
-        moonState.advance();
-        squareCornersState.advance();
-        growingDotsState.advance();
-        bouncingBallState.advance();
-        customState.advance();
-        brailleScanState.advance();
-        brailleBreatheState.advance();
-        brailleDnaState.advance();
-        brailleRainState.advance();
-        brailleOrbitState.advance();
-        brailleWaveRowsState.advance();
-        brailleHelixState.advance();
     }
 
     private void ui(Frame frame) {
@@ -189,7 +152,9 @@ public class SpinnerDemo {
     }
 
     private void renderMainContent(Frame frame, Rect area) {
-        // Split into two columns for more spinners
+        int total = entries.size();
+        int half = (total + 1) / 2;
+
         var cols = Layout.horizontal()
             .constraints(
                 Constraint.percentage(50),
@@ -197,173 +162,43 @@ public class SpinnerDemo {
             )
             .split(area);
 
-        // Left column - basic styles
-        var leftRows = Layout.vertical()
-            .constraints(
-                Constraint.length(3),  // DOTS
-                Constraint.length(3),  // LINE
-                Constraint.length(3),  // ARC
-                Constraint.length(3),  // CIRCLE
-                Constraint.length(3),  // BOUNCING_BAR
-                Constraint.length(3),  // TOGGLE
-                Constraint.length(3)   // GAUGE
-            )
-            .split(cols.get(0));
+        renderColumn(frame, cols.get(0), 0, half);
+        renderColumn(frame, cols.get(1), half, total);
+    }
 
-        renderSpinnerRow(frame, leftRows.get(0), "DOTS (braille)",
-            Spinner.builder().spinnerStyle(SpinnerStyle.DOTS).style(Style.EMPTY.fg(CYAN)).build(),
-            dotsState);
+    private void renderColumn(Frame frame, Rect area, int from, int to) {
+        int count = to - from;
+        Constraint[] constraints = new Constraint[count];
+        for (int i = 0; i < count; i++) {
+            constraints[i] = Constraint.length(1);
+        }
+        var rows = Layout.vertical().constraints(constraints).split(area);
 
-        renderSpinnerRow(frame, leftRows.get(1), "LINE (-\\|/)",
-            Spinner.builder().spinnerStyle(SpinnerStyle.LINE).style(Style.EMPTY.fg(GREEN)).build(),
-            lineState);
-
-        renderSpinnerRow(frame, leftRows.get(2), "ARC",
-            Spinner.builder().spinnerStyle(SpinnerStyle.ARC).style(Style.EMPTY.fg(YELLOW)).build(),
-            arcState);
-
-        renderSpinnerRow(frame, leftRows.get(3), "CIRCLE",
-            Spinner.builder().spinnerStyle(SpinnerStyle.CIRCLE).style(Style.EMPTY.fg(MAGENTA)).build(),
-            circleState);
-
-        renderSpinnerRow(frame, leftRows.get(4), "BOUNCING_BAR",
-            Spinner.builder().spinnerStyle(SpinnerStyle.BOUNCING_BAR).style(Style.EMPTY.fg(BLUE)).build(),
-            bouncingBarState);
-
-        renderSpinnerRow(frame, leftRows.get(5), "TOGGLE",
-            Spinner.builder().spinnerStyle(SpinnerStyle.TOGGLE).style(Style.EMPTY.fg(RED)).build(),
-            toggleState);
-
-        renderSpinnerRow(frame, leftRows.get(6), "GAUGE (block fill)",
-            Spinner.builder().spinnerStyle(SpinnerStyle.GAUGE).style(Style.EMPTY.fg(CYAN)).build(),
-            gaugeState);
-
-        // Right column - new styles
-        var rightRows = Layout.vertical()
-            .constraints(
-                Constraint.length(3),  // VERTICAL_GAUGE
-                Constraint.length(3),  // ARROWS
-                Constraint.length(3),  // CLOCK
-                Constraint.length(3),  // MOON
-                Constraint.length(3),  // SQUARE_CORNERS
-                Constraint.length(3),  // GROWING_DOTS
-                Constraint.length(3),  // BOUNCING_BALL
-                Constraint.length(3),  // Custom FrameSet
-                Constraint.length(3),  // BRAILLE scan
-                Constraint.length(3),  // BRAILLE breathe
-                Constraint.length(3),  // BRAILLE DNA
-                Constraint.length(3),  // BRAILLE rain
-                Constraint.length(3),  // BRAILLE orbit
-                Constraint.length(3),  // BRAILLE waveRows
-                Constraint.length(3)   // BRAILLE helix
-            )
-            .split(cols.get(1));
-
-        renderSpinnerRow(frame, rightRows.get(0), "VERTICAL_GAUGE",
-            Spinner.builder().spinnerStyle(SpinnerStyle.VERTICAL_GAUGE).style(Style.EMPTY.fg(GREEN)).build(),
-            verticalGaugeState);
-
-        renderSpinnerRow(frame, rightRows.get(1), "ARROWS",
-            Spinner.builder().spinnerStyle(SpinnerStyle.ARROWS).style(Style.EMPTY.fg(YELLOW)).build(),
-            arrowsState);
-
-        renderSpinnerRow(frame, rightRows.get(2), "CLOCK",
-            Spinner.builder().spinnerStyle(SpinnerStyle.CLOCK).style(Style.EMPTY.fg(MAGENTA)).build(),
-            clockState);
-
-        renderSpinnerRow(frame, rightRows.get(3), "MOON",
-            Spinner.builder().spinnerStyle(SpinnerStyle.MOON).style(Style.EMPTY.fg(BLUE)).build(),
-            moonState);
-
-        renderSpinnerRow(frame, rightRows.get(4), "SQUARE_CORNERS",
-            Spinner.builder().spinnerStyle(SpinnerStyle.SQUARE_CORNERS).style(Style.EMPTY.fg(RED)).build(),
-            squareCornersState);
-
-        renderSpinnerRow(frame, rightRows.get(5), "GROWING_DOTS",
-            Spinner.builder().spinnerStyle(SpinnerStyle.GROWING_DOTS).style(Style.EMPTY.fg(ORANGE)).build(),
-            growingDotsState);
-
-        renderSpinnerRow(frame, rightRows.get(6), "BOUNCING_BALL",
-            Spinner.builder().spinnerStyle(SpinnerStyle.BOUNCING_BALL).style(Style.EMPTY.fg(CYAN)).build(),
-            bouncingBallState);
-
-        renderSpinnerRow(frame, rightRows.get(7), "Custom FrameSet",
-            Spinner.builder().frameSet(CUSTOM_FRAMES).style(Style.EMPTY.fg(MAGENTA)).build(),
-            customState);
-
-        renderSpinnerRow(frame, rightRows.get(8), "BRAILLE scan",
-            Spinner.builder().frameSet(BraillePatterns.of(BraillePatterns.scan()))
-                .style(Style.EMPTY.fg(CYAN)).build(),
-            brailleScanState);
-
-        renderSpinnerRow(frame, rightRows.get(9), "BRAILLE breathe",
-            Spinner.builder().frameSet(BraillePatterns.of(BraillePatterns.breathe()))
-                .style(Style.EMPTY.fg(GREEN)).build(),
-            brailleBreatheState);
-
-        renderSpinnerRow(frame, rightRows.get(10), "BRAILLE dna",
-            Spinner.builder().frameSet(BraillePatterns.of(BraillePatterns.dna()))
-                .style(Style.EMPTY.fg(YELLOW)).build(),
-            brailleDnaState);
-
-        renderSpinnerRow(frame, rightRows.get(11), "BRAILLE rain",
-            Spinner.builder().frameSet(BraillePatterns.of(BraillePatterns.rain()))
-                .style(Style.EMPTY.fg(MAGENTA)).build(),
-            brailleRainState);
-
-        renderSpinnerRow(frame, rightRows.get(12), "BRAILLE orbit",
-            Spinner.builder().frameSet(BraillePatterns.of(BraillePatterns.orbit()))
-                .style(Style.EMPTY.fg(BLUE)).build(),
-            brailleOrbitState);
-
-        renderSpinnerRow(frame, rightRows.get(13), "BRAILLE waveRows",
-            Spinner.builder().frameSet(BraillePatterns.of(BraillePatterns.waveRows()))
-                .style(Style.EMPTY.fg(RED)).build(),
-            brailleWaveRowsState);
-
-        renderSpinnerRow(frame, rightRows.get(14), "BRAILLE helix",
-            Spinner.builder().frameSet(BraillePatterns.of(BraillePatterns.helix()))
-                .style(Style.EMPTY.fg(ORANGE)).build(),
-            brailleHelixState);
+        for (int i = 0; i < count; i++) {
+            SpinnerEntry e = entries.get(from + i);
+            renderSpinnerRow(frame, rows.get(i), e.label(), e.spinner(), e.state());
+        }
     }
 
     private void renderSpinnerRow(Frame frame, Rect area, String label, Spinner spinner, SpinnerState state) {
-        // Split into label and spinner areas
         var cols = Layout.horizontal()
             .constraints(
-                Constraint.length(35),  // Label
-                Constraint.length(10),  // Spinner
+                Constraint.length(20),  // Label
+                Constraint.length(4),   // Spinner
                 Constraint.fill()       // Spacer
             )
             .split(area);
 
-        // Render label block
-        Block labelBlock = Block.builder()
-            .borders(Borders.ALL)
-            .borderType(BorderType.ROUNDED)
-            .borderStyle(Style.EMPTY.fg(Color.DARK_GRAY))
-            .build();
-        frame.renderWidget(labelBlock, cols.get(0));
-
-        Rect labelInner = labelBlock.inner(cols.get(0));
-        frame.buffer().setString(labelInner.x(), labelInner.y(), label, Style.EMPTY.fg(Color.WHITE));
-
-        // Render spinner block
-        Block spinnerBlock = Block.builder()
-            .borders(Borders.ALL)
-            .borderType(BorderType.ROUNDED)
-            .borderStyle(Style.EMPTY.fg(Color.BLUE))
-            .build();
-        frame.renderWidget(spinnerBlock, cols.get(1));
-
-        Rect spinnerInner = spinnerBlock.inner(cols.get(1));
-        frame.renderStatefulWidget(spinner, spinnerInner, state);
+        frame.buffer().setString(cols.get(0).x(), cols.get(0).y(), label, Style.EMPTY.fg(Color.DARK_GRAY));
+        frame.renderStatefulWidget(spinner, cols.get(1), state);
     }
 
     private void renderFooter(Frame frame, Rect area) {
         Line helpLine = Line.from(
             Span.raw(" Frame: ").dim(),
             Span.raw(String.valueOf(frameCount)).bold().cyan(),
+            Span.raw("  Spinners: ").dim(),
+            Span.raw(String.valueOf(entries.size())).bold().cyan(),
             Span.raw("   "),
             Span.raw("q").bold().yellow(),
             Span.raw(" Quit").dim()
