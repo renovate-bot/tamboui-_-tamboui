@@ -295,7 +295,7 @@ final class SystemMetrics {
                 cpuPercent = 0;
             }
 
-            var memoryKb = p.getResidentSetSize() / 1024;
+            var memoryKb = p.getResidentMemory() / 1024;
             var user = p.getUser();
             if (user == null || user.isBlank()) {
                 user = "?";
