@@ -45,7 +45,7 @@ TamboUI is a Java library for building modern terminal user interfaces, inspired
 | Module                | Purpose                                                                                             |
 |-----------------------|-----------------------------------------------------------------------------------------------------|
 | `tamboui-core`        | Core types: Buffer, Cell, Rect, Style, Layout, Text, Widget/StatefulWidget interfaces, InlineDisplay |
-| `tamboui-widgets`     | All widget implementations (Block, Paragraph, List, Table, Chart, Canvas, etc.)                     |
+| `tamboui-widgets`     | All widget implementations (Block, Paragraph, List, Table, Chart, Canvas, Sparkline, DualSparkline, etc.) |
 | `tamboui-jline`       | JLine 3 terminal backend implementation                                                             |
 | `tamboui-tui`         | High-level TUI framework: TuiRunner, event handling, bindings, action handlers                      |
 | `tamboui-toolkit`     | Fluent DSL for declarative UI with retained-mode elements, focus management, event routing          |
@@ -120,7 +120,7 @@ class MyApp extends ToolkitApp {
 - `dev.tamboui.layout` - Rect, Constraint, Layout, Direction
 - `dev.tamboui.style` - Style, Color, Modifier
 - `dev.tamboui.text` - Text, Span, Line for styled text
-- `dev.tamboui.widgets.*` - Widget implementations (block, paragraph, list, table, chart, canvas, etc.)
+- `dev.tamboui.widgets.*` - Widget implementations (block, paragraph, list, table, chart, canvas, sparkline, etc.)
 - `dev.tamboui.tui` - TuiRunner, TuiConfig, RenderThread, event types
 - `dev.tamboui.tui.bindings` - Bindings, BindingSets, KeyTrigger, MouseTrigger, ActionHandler, @OnAction
 - `dev.tamboui.toolkit` - Toolkit DSL factory methods, Element interface, element implementations
