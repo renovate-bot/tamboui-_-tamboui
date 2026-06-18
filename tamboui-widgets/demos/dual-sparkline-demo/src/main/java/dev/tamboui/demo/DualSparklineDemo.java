@@ -27,14 +27,14 @@ import dev.tamboui.widgets.block.BorderType;
 import dev.tamboui.widgets.block.Borders;
 import dev.tamboui.widgets.block.Title;
 import dev.tamboui.widgets.paragraph.Paragraph;
+import dev.tamboui.widgets.sparkline.DualSparkline;
 import dev.tamboui.widgets.sparkline.Sparkline;
 
 /**
- * Demo TUI application showcasing the Sparkline widget.
+ * Demo TUI application showcasing the DualSparkline widget.
  * <p>
- * Demonstrates sparklines at different heights — from compact single-row
- * to tall multi-row — with toggleable Y/X axis labels, bar sets,
- * render direction, and animated data updates.
+ * Demonstrates dual-series charts displaying network IN/OUT and disk
+ * read/write rates with compact and expanded layout modes.
  * <p>
  * Keys:
  * <ul>
@@ -45,22 +45,22 @@ import dev.tamboui.widgets.sparkline.Sparkline;
  *   <li>{@code q} — quit</li>
  * </ul>
  */
-public class SparklineDemo {
+public class DualSparklineDemo {
 
     private static final int DATA_SIZE = 200;
-    private static final String[] X_LABELS = {"-60s", "-30s", "now"};
-    private static final int MIN_HEIGHT = 3;
-    private static final int MAX_HEIGHT = 20;
+    private static final String[] X_LABELS = {"-60s", "-45s", "-30s", "-15s", "now"};
+    private static final int MIN_HEIGHT = 4;
+    private static final int MAX_HEIGHT = 30;
 
     private boolean running = true;
-    private boolean compact = true;
-    private int compactHeight = 5;
-    private boolean showYAxis;
-    private boolean showXAxis;
-    private final long[] cpuData = new long[DATA_SIZE];
-    private final long[] memoryData = new long[DATA_SIZE];
-    private final long[] networkData = new long[DATA_SIZE];
-    private final long[] diskData = new long[DATA_SIZE];
+    private boolean compact;
+    private int compactHeight = 11;
+    private boolean showYAxis = true;
+    private boolean showXAxis = true;
+    private final long[] netIn = new long[DATA_SIZE];
+    private final long[] netOut = new long[DATA_SIZE];
+    private final long[] diskRead = new long[DATA_SIZE];
+    private final long[] diskWrite = new long[DATA_SIZE];
     private final Random random = new Random();
     private long frameCount = 0;
 
@@ -71,15 +71,15 @@ public class SparklineDemo {
      * @throws Exception on unexpected error
      */
     public static void main(String[] args) throws Exception {
-        new SparklineDemo().run();
+        new DualSparklineDemo().run();
     }
 
-    private SparklineDemo() {
+    private DualSparklineDemo() {
         for (int i = 0; i < DATA_SIZE; i++) {
-            cpuData[i] = 30 + random.nextInt(40);
-            memoryData[i] = 50 + random.nextInt(30);
-            networkData[i] = random.nextInt(100);
-            diskData[i] = random.nextInt(50);
+            netIn[i] = 20 + random.nextInt(60);
+            netOut[i] = 10 + random.nextInt(40);
+            diskRead[i] = 5 + random.nextInt(50);
+            diskWrite[i] = 5 + random.nextInt(30);
         }
     }
 
@@ -107,9 +107,9 @@ public class SparklineDemo {
                 } else if (c == 9) { // Tab
                     compact = !compact;
                 } else if (c == '+' || c == '=') {
-                    compactHeight = Math.min(MAX_HEIGHT, compactHeight + 1);
+                    compactHeight = Math.min(MAX_HEIGHT, compactHeight + 2);
                 } else if (c == '-' || c == '_') {
-                    compactHeight = Math.max(MIN_HEIGHT, compactHeight - 1);
+                    compactHeight = Math.max(MIN_HEIGHT, compactHeight - 2);
                 } else if (c == 'y' || c == 'Y') {
                     showYAxis = !showYAxis;
                 } else if (c == 'x' || c == 'X') {
@@ -123,15 +123,15 @@ public class SparklineDemo {
     }
 
     private void updateData() {
-        System.arraycopy(cpuData, 1, cpuData, 0, DATA_SIZE - 1);
-        System.arraycopy(memoryData, 1, memoryData, 0, DATA_SIZE - 1);
-        System.arraycopy(networkData, 1, networkData, 0, DATA_SIZE - 1);
-        System.arraycopy(diskData, 1, diskData, 0, DATA_SIZE - 1);
+        System.arraycopy(netIn, 1, netIn, 0, DATA_SIZE - 1);
+        System.arraycopy(netOut, 1, netOut, 0, DATA_SIZE - 1);
+        System.arraycopy(diskRead, 1, diskRead, 0, DATA_SIZE - 1);
+        System.arraycopy(diskWrite, 1, diskWrite, 0, DATA_SIZE - 1);
 
-        cpuData[DATA_SIZE - 1] = clamp(cpuData[DATA_SIZE - 2] + random.nextInt(21) - 10, 10, 90);
-        memoryData[DATA_SIZE - 1] = clamp(memoryData[DATA_SIZE - 2] + random.nextInt(11) - 5, 40, 90);
-        networkData[DATA_SIZE - 1] = clamp(networkData[DATA_SIZE - 2] + random.nextInt(31) - 15, 0, 100);
-        diskData[DATA_SIZE - 1] = clamp(diskData[DATA_SIZE - 2] + random.nextInt(11) - 5, 0, 50);
+        netIn[DATA_SIZE - 1] = clamp(netIn[DATA_SIZE - 2] + random.nextInt(21) - 10, 0, 100);
+        netOut[DATA_SIZE - 1] = clamp(netOut[DATA_SIZE - 2] + random.nextInt(21) - 10, 0, 100);
+        diskRead[DATA_SIZE - 1] = clamp(diskRead[DATA_SIZE - 2] + random.nextInt(15) - 7, 0, 80);
+        diskWrite[DATA_SIZE - 1] = clamp(diskWrite[DATA_SIZE - 2] + random.nextInt(11) - 5, 0, 60);
     }
 
     private long clamp(long value, long min, long max) {
@@ -160,46 +160,44 @@ public class SparklineDemo {
 
     private void renderHeader(Frame frame, Rect area) {
         String mode = compact ? "Compact (" + compactHeight + " rows)" : "Expanded";
-        Block headerBlock = Block.builder()
+        Block block = Block.builder()
             .borders(Borders.ALL)
             .borderType(BorderType.ROUNDED)
             .borderStyle(Style.EMPTY.fg(Color.CYAN))
             .title(Title.from(
                 Line.from(
                     Span.raw(" TamboUI ").bold().cyan(),
-                    Span.raw("Sparkline Demo ").yellow(),
+                    Span.raw("DualSparkline Demo ").yellow(),
                     Span.raw("— " + mode + " ").dim()
                 )
             ).centered())
             .build();
 
-        frame.renderWidget(headerBlock, area);
+        frame.renderWidget(block, area);
     }
 
-    // --- Compact layout: 4 sparklines stacked at fixed height ---
+    // --- Compact layout: 2 charts stacked at fixed height ---
 
     private void renderCompactLayout(Frame frame, Rect area) {
         var rows = Layout.vertical()
             .constraints(
                 Constraint.length(compactHeight),
                 Constraint.length(compactHeight),
-                Constraint.length(compactHeight),
-                Constraint.length(compactHeight),
                 Constraint.fill()
             )
             .split(area);
 
-        renderSparkline(frame, rows.get(0), "CPU", cpuData, Color.GREEN,
-                Sparkline.BarSet.NINE_LEVELS, Sparkline.RenderDirection.LEFT_TO_RIGHT);
-        renderSparkline(frame, rows.get(1), "Memory", memoryData, Color.YELLOW,
-                Sparkline.BarSet.NINE_LEVELS, Sparkline.RenderDirection.LEFT_TO_RIGHT);
-        renderSparkline(frame, rows.get(2), "Network", networkData, Color.CYAN,
-                Sparkline.BarSet.THREE_LEVELS, Sparkline.RenderDirection.LEFT_TO_RIGHT);
-        renderSparkline(frame, rows.get(3), "Disk (RTL)", diskData, Color.MAGENTA,
-                Sparkline.BarSet.NINE_LEVELS, Sparkline.RenderDirection.RIGHT_TO_LEFT);
+        renderChart(frame, rows.get(0), "Network",
+                netIn, netOut, "IN", "OUT",
+                Color.GREEN, Color.BLUE, Color.CYAN,
+                Sparkline.BarSet.NINE_LEVELS);
+        renderChart(frame, rows.get(1), "Disk",
+                diskRead, diskWrite, "READ", "WRITE",
+                Color.YELLOW, Color.MAGENTA, Color.YELLOW,
+                Sparkline.BarSet.NINE_LEVELS);
     }
 
-    // --- Expanded layout: 2x2 grid filling the space ---
+    // --- Expanded layout: 2 charts filling the space ---
 
     private void renderExpandedLayout(Frame frame, Rect area) {
         var rows = Layout.vertical()
@@ -209,51 +207,48 @@ public class SparklineDemo {
             )
             .split(area);
 
-        var topCols = Layout.horizontal()
-            .constraints(Constraint.percentage(50), Constraint.percentage(50))
-            .split(rows.get(0));
-
-        var bottomCols = Layout.horizontal()
-            .constraints(Constraint.percentage(50), Constraint.percentage(50))
-            .split(rows.get(1));
-
-        renderSparkline(frame, topCols.get(0), "CPU", cpuData, Color.GREEN,
-                Sparkline.BarSet.NINE_LEVELS, Sparkline.RenderDirection.LEFT_TO_RIGHT);
-        renderSparkline(frame, topCols.get(1), "Memory", memoryData, Color.YELLOW,
-                Sparkline.BarSet.NINE_LEVELS, Sparkline.RenderDirection.LEFT_TO_RIGHT);
-        renderSparkline(frame, bottomCols.get(0), "Network", networkData, Color.CYAN,
-                Sparkline.BarSet.THREE_LEVELS, Sparkline.RenderDirection.LEFT_TO_RIGHT);
-        renderSparkline(frame, bottomCols.get(1), "Disk (RTL)", diskData, Color.MAGENTA,
-                Sparkline.BarSet.NINE_LEVELS, Sparkline.RenderDirection.RIGHT_TO_LEFT);
+        renderChart(frame, rows.get(0), "Network",
+                netIn, netOut, "IN", "OUT",
+                Color.GREEN, Color.BLUE, Color.CYAN,
+                Sparkline.BarSet.NINE_LEVELS);
+        renderChart(frame, rows.get(1), "Disk",
+                diskRead, diskWrite, "READ", "WRITE",
+                Color.YELLOW, Color.MAGENTA, Color.YELLOW,
+                Sparkline.BarSet.NINE_LEVELS);
     }
 
-    private void renderSparkline(Frame frame, Rect area, String name, long[] data,
-            Color color, Sparkline.BarSet barSet, Sparkline.RenderDirection dir) {
-        long current = data[DATA_SIZE - 1];
-        String label = String.format(" %s: %d%% ", name, current);
-        String[] labels = dir == Sparkline.RenderDirection.RIGHT_TO_LEFT
-                ? new String[]{"now", "-30s", "-60s"}
-                : X_LABELS;
+    private void renderChart(Frame frame, Rect area, String name,
+            long[] topData, long[] bottomData, String topLabel, String bottomLabel,
+            Color topColor, Color bottomColor, Color borderColor,
+            Sparkline.BarSet barSet) {
+        long curTop = topData[DATA_SIZE - 1];
+        long curBot = bottomData[DATA_SIZE - 1];
 
-        Sparkline sparkline = Sparkline.builder()
-            .data(data)
+        DualSparkline chart = DualSparkline.builder()
+            .topData(topData)
+            .bottomData(bottomData)
+            .topForeground(topColor)
+            .bottomForeground(bottomColor)
             .max(100)
-            .style(Style.EMPTY.fg(color))
-            .barSet(barSet)
-            .direction(dir)
             .showYAxis(showYAxis)
-            .xLabels(showXAxis ? labels : null)
+            .barSet(barSet)
+            .xLabels(showXAxis ? X_LABELS : null)
             .block(Block.builder()
                 .borders(Borders.ALL)
                 .borderType(BorderType.ROUNDED)
-                .borderStyle(Style.EMPTY.fg(color))
+                .borderStyle(Style.EMPTY.fg(borderColor))
                 .title(Title.from(Line.from(
-                    Span.styled(label, Style.EMPTY.fg(color))
+                    Span.styled(" " + name + " ", Style.EMPTY.bold().fg(borderColor)),
+                    Span.styled(topLabel + " ", Style.EMPTY.fg(topColor)),
+                    Span.styled(String.format("%d MB/s", curTop), Style.EMPTY.bold().fg(topColor)),
+                    Span.raw("  "),
+                    Span.styled(bottomLabel + " ", Style.EMPTY.fg(bottomColor)),
+                    Span.styled(String.format("%d MB/s ", curBot), Style.EMPTY.bold().fg(bottomColor))
                 )))
                 .build())
             .build();
 
-        frame.renderWidget(sparkline, area);
+        frame.renderWidget(chart, area);
     }
 
     private void renderFooter(Frame frame, Rect area) {

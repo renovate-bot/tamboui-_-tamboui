@@ -22,6 +22,7 @@ import dev.tamboui.toolkit.elements.Column;
 import dev.tamboui.toolkit.elements.ColumnsElement;
 import dev.tamboui.toolkit.elements.DialogElement;
 import dev.tamboui.toolkit.elements.DockElement;
+import dev.tamboui.toolkit.elements.DualSparklineElement;
 import dev.tamboui.toolkit.elements.FlowElement;
 import dev.tamboui.toolkit.elements.FormElement;
 import dev.tamboui.toolkit.elements.FormFieldElement;
@@ -816,6 +817,39 @@ public final class Toolkit {
      */
     public static SparklineElement sparkline() {
         return new SparklineElement();
+    }
+
+    // ==================== DualSparkline ====================
+
+    /**
+     * Creates a dual sparkline with the given top and bottom data.
+     *
+     * @param topData    the top series values
+     * @param bottomData the bottom series values
+     * @return a new dual sparkline element
+     */
+    public static DualSparklineElement dualSparkline(long[] topData, long[] bottomData) {
+        return new DualSparklineElement().topData(topData).bottomData(bottomData);
+    }
+
+    /**
+     * Creates a dual sparkline with the given top and bottom data.
+     *
+     * @param topData    the top series values as integers
+     * @param bottomData the bottom series values as integers
+     * @return a new dual sparkline element
+     */
+    public static DualSparklineElement dualSparkline(int[] topData, int[] bottomData) {
+        return new DualSparklineElement().topData(topData).bottomData(bottomData);
+    }
+
+    /**
+     * Creates an empty dual sparkline.
+     *
+     * @return a new empty dual sparkline element
+     */
+    public static DualSparklineElement dualSparkline() {
+        return new DualSparklineElement();
     }
 
     // ==================== List ====================
