@@ -9,6 +9,7 @@ package dev.tamboui.demo.flex;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import dev.tamboui.layout.Alignment;
 import dev.tamboui.layout.Flex;
 import dev.tamboui.style.Color;
 import dev.tamboui.toolkit.app.ToolkitRunner;
@@ -298,11 +299,11 @@ public class FlexDemo {
     }
 
     /**
-     * Example 4: Practical toolbar examples.
+     * Example 4: Practical toolbar examples with title alignment.
      */
     private static Element renderToolbar(Flex flex) {
         return column(
-                // Simple toolbar
+                // Simple toolbar - left-aligned title (default)
                 panel(() -> row(
                         button("New", Color.GREEN),
                         button("Open", Color.BLUE),
@@ -315,18 +316,19 @@ public class FlexDemo {
                 .borderColor(Color.BLUE)
                 .length(5),
 
-                // Status bar style
+                // Status bar style - centered title
                 panel(() -> row(
                         text(" Ready").bold().green(),
                         text(" | Line 42, Col 15").dim(),
                         text(" | UTF-8").dim()
                 ).flex(flex))
                 .title("Status bar")
+                .titleCenter()
                 .rounded()
                 .borderColor(Color.GREEN)
                 .length(3),
 
-                // Menu bar style
+                // Menu bar style - right-aligned title, centered bottom title
                 panel(() -> row(
                         menuItem("File"),
                         menuItem("Edit"),
@@ -334,6 +336,9 @@ public class FlexDemo {
                         menuItem("Help")
                 ).flex(flex).spacing(2))
                 .title("Menu bar")
+                .titleRight()
+                .bottomTitle("ESC to close")
+                .bottomTitleAlignment(Alignment.CENTER)
                 .rounded()
                 .borderColor(Color.YELLOW)
                 .length(3),

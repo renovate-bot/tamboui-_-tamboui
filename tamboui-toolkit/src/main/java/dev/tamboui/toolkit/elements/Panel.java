@@ -635,7 +635,8 @@ public final class Panel extends ContainerElement<Panel> {
 
         if (bottomTitle != null) {
             blockBuilder.titleBottom(Title.from(bottomTitle)
-                    .alignment(resolveTitleAlignment(bottomTitleAlignment, cssResolver)));
+                    .alignment(resolveTitleAlignment(bottomTitleAlignment, cssResolver))
+                    .overflow(titleOverflow));
         }
 
         Block block = blockBuilder.build();

@@ -131,6 +131,23 @@ class PanelTest extends AbstractElementTest {
         assertThat(buffer.get(18, 0).symbol()).isEqualTo("i");
     }
 
+    // ============ titleOverflow on bottom title ============
+
+    @Test
+    @DisplayName("titleOverflow applies to bottom title")
+    void titleOverflow_appliesToBottomTitle() {
+        // "Hello World" (11 chars) in a 10-wide panel: inner border width = 8
+        Buffer buffer = renderPanel(
+            panel().bottomTitle("Hello World").titleEllipsis(),
+            new Rect(0, 0, 10, 3));
+        // Bottom border is row 2; chars start at x=1
+        // 8 available, 11 needed -> ellipsis: "Hello..." (8 chars)
+        // Last 3 chars should be "..."
+        assertThat(buffer.get(6, 2).symbol()).isEqualTo(".");
+        assertThat(buffer.get(7, 2).symbol()).isEqualTo(".");
+        assertThat(buffer.get(8, 2).symbol()).isEqualTo(".");
+    }
+
     // ============ preferredWidth tests ============
 
     @Test
