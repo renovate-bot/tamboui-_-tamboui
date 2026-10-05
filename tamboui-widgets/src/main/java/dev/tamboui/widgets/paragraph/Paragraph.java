@@ -43,12 +43,14 @@ public final class Paragraph implements Widget {
     private final Alignment alignment;
     private final Overflow overflow;
     private final int scroll;
+    private final boolean hangingIndent;
 
     private Paragraph(Builder builder) {
         this.text = builder.text;
         this.block = builder.block;
         this.alignment = builder.resolveAlignment();
         this.overflow = builder.resolveOverflow();
+        this.hangingIndent = builder.hangingIndent;
         this.scroll = builder.scroll;
 
         Color resolvedBackground = builder.resolveBackground();
@@ -318,14 +320,104 @@ public final class Paragraph implements Widget {
                 continue;
             }
 
-            if (overflow == Overflow.WRAP_WORD) {
-                wrapped.addAll(wrapLineByWord(line, maxWidth));
-            } else {
-                wrapped.addAll(wrapLineByCharacter(line, maxWidth));
+            int indent = hangingIndent ? leadingWhitespaceWidth(line) : 0;
+            if (indent <= 0 || indent >= maxWidth) {
+                wrapped.addAll(wrapOne(line, maxWidth));
+                continue;
+            }
+            // the first row as usual, the rest of the line under its first non-blank character
+            List<Line> first = wrapOne(line, maxWidth);
+            Line head = first.get(0);
+            wrapped.add(head);
+            Line rest = dropLeadingWhitespace(dropCodePoints(line, codePointCount(head)));
+            if (rest.width() == 0) {
+                continue;
+            }
+            Span pad = Span.raw(repeatSpace(indent));
+            for (Line continuation : wrapOne(rest, maxWidth - indent)) {
+                List<Span> spans = new ArrayList<>(continuation.spans().size() + 1);
+                spans.add(pad);
+                spans.addAll(continuation.spans());
+                wrapped.add(Line.from(spans));
             }
         }
 
         return wrapped;
+    }
+
+    private List<Line> wrapOne(Line line, int maxWidth) {
+        if (line.width() <= maxWidth) {
+            return Collections.singletonList(line);
+        }
+        return overflow == Overflow.WRAP_WORD ? wrapLineByWord(line, maxWidth) : wrapLineByCharacter(line, maxWidth);
+    }
+
+    private static int leadingWhitespaceWidth(Line line) {
+        int width = 0;
+        for (Span span : line.spans()) {
+            String content = span.content();
+            for (int i = 0; i < content.length(); i++) {
+                if (content.charAt(i) != ' ') {
+                    return width;
+                }
+                width++;
+            }
+        }
+        return 0;
+    }
+
+    private static int codePointCount(Line line) {
+        int count = 0;
+        for (Span span : line.spans()) {
+            count += span.content().codePointCount(0, span.content().length());
+        }
+        return count;
+    }
+
+    private static Line dropCodePoints(Line line, int count) {
+        List<Span> result = new ArrayList<>();
+        int toDrop = count;
+        for (Span span : line.spans()) {
+            String content = span.content();
+            int cps = content.codePointCount(0, content.length());
+            if (toDrop >= cps) {
+                toDrop -= cps;
+                continue;
+            }
+            String kept = toDrop > 0 ? content.substring(content.offsetByCodePoints(0, toDrop)) : content;
+            toDrop = 0;
+            result.add(new Span(kept, span.style()));
+        }
+        return Line.from(result);
+    }
+
+    private static Line dropLeadingWhitespace(Line line) {
+        List<Span> result = new ArrayList<>();
+        boolean leading = true;
+        for (Span span : line.spans()) {
+            String content = span.content();
+            if (leading) {
+                int i = 0;
+                while (i < content.length() && Character.isWhitespace(content.charAt(i))) {
+                    i++;
+                }
+                if (i == content.length()) {
+                    continue;
+                }
+                content = content.substring(i);
+                leading = false;
+            }
+            result.add(new Span(content, span.style()));
+        }
+        return Line.from(result);
+    }
+
+    private static String repeatSpace(int count) {
+        StringBuilder sb = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            sb.append(' ');
+        }
+        return sb.toString();
     }
 
     private List<Line> wrapLineByCharacter(Line line, int maxWidth) {
@@ -606,6 +698,10 @@ public final class Paragraph implements Widget {
         private Block block;
         private Style style = Style.EMPTY;
         private int scroll = 0;
+        // Hanging indent is always on. The flag is kept wired (and off-by-false still works
+        // internally) but is intentionally not exposed via a public setter yet; see the
+        // commented-out hangingIndent(boolean) below.
+        private boolean hangingIndent = true;
         private StylePropertyResolver styleResolver = StylePropertyResolver.empty();
 
         // Style-aware properties (resolved via styleResolver in build())
@@ -741,6 +837,32 @@ public final class Paragraph implements Widget {
             this.scroll = Math.max(0, scroll);
             return this;
         }
+
+        // Kept non-public until a valid use case shows up. Hanging indent is the default and
+        // only wrapping behaviour today; the off-at-left-edge path is still implemented behind
+        // the flag, but exposing it is an API commitment we only want to make once someone has
+        // a concrete need.
+        //
+        // When it IS exposed, prefer a continuation-indent strategy option (e.g. an enum like
+        // ContinuationIndentStrategy.HANGING / FLUSH_LEFT) rather than this boolean, parallel to
+        // Overflow: both are facets of one text-layout mechanism and should live in a shared
+        // wrapping utility, not be re-implemented per widget. The boolean below is only the
+        // internal wiring; uncomment it (and its javadoc) for a quick re-enable in the meantime.
+        //
+        // /**
+        //  * Sets whether a wrapped line continues under its first non-blank character instead of at the left edge,
+        //  * so an indented line (a list entry, a key and its value) keeps its indent when it wraps. Only applies with
+        //  * a wrapping overflow ({@link Overflow#WRAP_WORD}, {@link Overflow#WRAP_CHARACTER}); an indent that leaves no
+        //  * room for text is not kept. On by default; turn it off for text that should continue at the left edge, such
+        //  * as ASCII art or a layout drawn with leading spaces.
+        //  *
+        //  * @param hangingIndent true (the default) to indent the continuation rows of a wrapped line
+        //  * @return this builder
+        //  */
+        // public Builder hangingIndent(boolean hangingIndent) {
+        //     this.hangingIndent = hangingIndent;
+        //     return this;
+        // }
 
         /**
          * Sets the property resolver for style-aware properties.
