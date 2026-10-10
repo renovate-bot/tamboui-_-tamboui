@@ -242,7 +242,10 @@ public final class TextAreaState {
         }
     }
 
-    /** Moves the cursor one logical row up (assumes {@link Overflow#CLIP}, no wrapping). */
+    /**
+     * Moves the cursor one logical row up, keeping its screen column (assumes {@link Overflow#CLIP},
+     * no wrapping).
+     */
     public void moveCursorUp() {
         moveCursorUpClip();
     }
@@ -275,12 +278,14 @@ public final class TextAreaState {
 
     private void moveCursorUpClip() {
         if (cursorRow > 0) {
-            cursorRow--;
-            cursorCol = Math.min(cursorCol, lines.get(cursorRow).length());
+            moveCursorToLine(cursorRow - 1);
         }
     }
 
-    /** Moves the cursor one logical row down (assumes {@link Overflow#CLIP}, no wrapping). */
+    /**
+     * Moves the cursor one logical row down, keeping its screen column (assumes {@link Overflow#CLIP},
+     * no wrapping).
+     */
     public void moveCursorDown() {
         moveCursorDownClip();
     }
@@ -313,9 +318,57 @@ public final class TextAreaState {
 
     private void moveCursorDownClip() {
         if (cursorRow < lines.size() - 1) {
-            cursorRow++;
-            cursorCol = Math.min(cursorCol, lines.get(cursorRow).length());
+            moveCursorToLine(cursorRow + 1);
         }
+    }
+
+    /**
+     * Moves the cursor to logical line {@code targetRow}, keeping it in the same screen column.
+     * The column is measured in display width from the visible viewport (or the line start when
+     * not horizontally scrolled) rather than reused as a char offset. On a line with emoji or CJK
+     * characters the same offset can land inside a grapheme, where the next keystroke would split it.
+     */
+    private void moveCursorToLine(int targetRow) {
+        StringBuilder line = lines.get(cursorRow);
+        StringBuilder target = lines.get(targetRow);
+        int start = 0;
+        int column;
+        if (scrollCol > 0 && cursorCol >= scrollCol && scrollCol <= line.length()) {
+            // The caret is drawn relative to scrollCol, not the start of the logical line.
+            column = CharWidth.of(line.substring(scrollCol, cursorCol));
+            start = Math.min(scrollCol, target.length());
+            // The same char offset can fall inside a grapheme on another line.
+            if (start < target.length()) {
+                int boundary = 0;
+                while (boundary < start) {
+                    boundary = GraphemeClusters.clusterEnd(target, boundary);
+                }
+                start = boundary;
+            }
+        } else {
+            column = CharWidth.of(line.substring(0, Math.min(cursorCol, line.length())));
+        }
+        cursorRow = targetRow;
+        cursorCol = offsetAtColumn(target, start, target.length(), column);
+    }
+
+    /**
+     * Returns the offset of the last grapheme cluster boundary in {@code line} between {@code start}
+     * and {@code end} whose display width from {@code start} does not pass {@code column}.
+     */
+    private static int offsetAtColumn(StringBuilder line, int start, int end, int column) {
+        int offset = start;
+        int width = 0;
+        while (offset < end) {
+            int next = GraphemeClusters.clusterEnd(line, offset);
+            int clusterWidth = CharWidth.of(line.substring(offset, next));
+            if (width + clusterWidth > column) {
+                break;
+            }
+            width += clusterWidth;
+            offset = next;
+        }
+        return offset;
     }
 
     /**
@@ -331,17 +384,7 @@ public final class TextAreaState {
 
         DisplayRow target = rows.get(toIndex);
         StringBuilder targetLine = lines.get(target.logicalRow());
-        int offset = target.startCol();
-        int width = 0;
-        while (offset < target.endCol()) {
-            int next = GraphemeClusters.clusterEnd(targetLine, offset);
-            int clusterWidth = CharWidth.of(targetLine.substring(offset, next));
-            if (width + clusterWidth > column) {
-                break;
-            }
-            width += clusterWidth;
-            offset = next;
-        }
+        int offset = offsetAtColumn(targetLine, target.startCol(), target.endCol(), column);
         cursorRow = target.logicalRow();
         cursorCol = offset;
 
