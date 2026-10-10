@@ -25,6 +25,7 @@ import dev.tamboui.markdown.MarkdownStyles;
 import dev.tamboui.style.Overflow;
 import dev.tamboui.style.Style;
 import dev.tamboui.text.CharWidth;
+import dev.tamboui.text.GraphemeClusters;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 
@@ -153,7 +154,11 @@ public final class MarkdownInlineRenderer {
                 if (currentWidth == 0) {
                     String head = CharWidth.substringByWidth(segment, maxWidth);
                     if (head.isEmpty()) {
-                        idx = wordEnd;
+                        // Keep the first grapheme together even when it is wider than the line.
+                        String wide = firstTooWideCluster(segment);
+                        appendSegment(current, wide, span.style());
+                        currentWidth = CharWidth.of(wide);
+                        idx += wide.length();
                         continue;
                     }
                     appendSegment(current, head, span.style());
@@ -191,10 +196,14 @@ public final class MarkdownInlineRenderer {
                 String tail = content.substring(idx);
                 String head = CharWidth.substringByWidth(tail, remaining);
                 if (head.isEmpty()) {
-                    out.add(toLine(current));
-                    current = new ArrayList<>();
-                    currentWidth = 0;
-                    continue;
+                    if (currentWidth > 0) {
+                        out.add(toLine(current));
+                        current = new ArrayList<>();
+                        currentWidth = 0;
+                        continue;
+                    }
+                    // Keep the first grapheme together even when it is wider than the line.
+                    head = firstTooWideCluster(tail);
                 }
                 appendSegment(current, head, span.style());
                 currentWidth += CharWidth.of(head);
@@ -202,6 +211,11 @@ public final class MarkdownInlineRenderer {
             }
         }
         out.add(toLine(current));
+    }
+
+    /** Takes one grapheme wider than the available column, without splitting a ZWJ sequence. */
+    private static String firstTooWideCluster(String text) {
+        return text.substring(0, GraphemeClusters.clusterEnd(text, 0));
     }
 
     private static Line clipSpans(List<Span> spans, int maxWidth) {

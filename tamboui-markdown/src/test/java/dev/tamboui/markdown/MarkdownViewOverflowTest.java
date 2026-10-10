@@ -4,20 +4,28 @@
  */
 package dev.tamboui.markdown;
 
+import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.commonmark.parser.Parser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.layout.Rect;
+import dev.tamboui.markdown.internal.MarkdownInlineRenderer;
 import dev.tamboui.style.Overflow;
 import dev.tamboui.style.PropertyDefinition;
+import dev.tamboui.style.Style;
 import dev.tamboui.style.StylePropertyResolver;
+import dev.tamboui.text.Line;
+import dev.tamboui.text.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class MarkdownViewOverflowTest {
 
@@ -37,6 +45,48 @@ class MarkdownViewOverflowTest {
             sb.append(buffer.get(x, y).symbol());
         }
         return sb.toString().replaceAll("\\s+$", "");
+    }
+
+    @Test
+    @DisplayName("WRAP_CHARACTER does not hang on a wide character wider than the line")
+    void wrapCharacterWideCharWiderThanLine() {
+        MarkdownView view = MarkdownView.builder().source("世界").overflow(Overflow.WRAP_CHARACTER).build();
+
+        // each wide character takes a line of its own; it used to loop until out of memory
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> assertThat(view.computeHeight(1)).isEqualTo(2));
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> renderInto(view, 1, 4));
+    }
+
+    @Test
+    @DisplayName("WRAP_WORD keeps a wide character wider than the line instead of dropping the word")
+    void wrapWordKeepsWideCharWiderThanLine() {
+        MarkdownView view = MarkdownView.builder().source("世界").build();
+
+        assertThat(view.computeHeight(1)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("WRAP_CHARACTER keeps a too-wide grapheme on one line")
+    void wrapCharacterKeepsGraphemeWhole() {
+        assertClusterStaysWhole(Overflow.WRAP_CHARACTER);
+    }
+
+    @Test
+    @DisplayName("WRAP_WORD keeps a too-wide grapheme on one line")
+    void wrapWordKeepsGraphemeWhole() {
+        assertClusterStaysWhole(Overflow.WRAP_WORD);
+    }
+
+    private static void assertClusterStaysWhole(Overflow overflow) {
+        for (String cluster : new String[] {"👩‍💻", "🇫🇷"}) {
+            List<Line> lines = MarkdownInlineRenderer.render(
+                Parser.builder().build().parse(cluster + "X").getFirstChild(),
+                Style.EMPTY, 1, MarkdownStyles.DEFAULTS, overflow);
+
+            assertThat(lines).hasSize(2);
+            assertThat(lines.get(0).spans()).extracting(Span::content).containsExactly(cluster);
+            assertThat(lines.get(1).spans()).extracting(Span::content).containsExactly("X");
+        }
     }
 
     @Test

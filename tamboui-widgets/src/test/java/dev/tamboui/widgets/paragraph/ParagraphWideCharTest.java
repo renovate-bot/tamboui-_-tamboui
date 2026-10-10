@@ -4,17 +4,22 @@
  */
 package dev.tamboui.widgets.paragraph;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import dev.tamboui.assertj.BufferAssertions;
 import dev.tamboui.buffer.Buffer;
 import dev.tamboui.layout.Rect;
 import dev.tamboui.style.Overflow;
+import dev.tamboui.style.Style;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.text.Text;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class ParagraphWideCharTest {
 
@@ -174,6 +179,59 @@ class ParagraphWideCharTest {
         Line line = Line.from(Span.raw("Hi"), Span.raw("世界"));
         // "Hi" = 2, "世界" = 4, total = 6
         assertThat(line.width()).isEqualTo(6);
+    }
+
+    @Test
+    @DisplayName("WRAP_WORD does not hang on a wide character wider than the line")
+    void wrapWordWideCharWiderThanLine() {
+        Paragraph p = Paragraph.builder()
+                .text(Text.from("中文"))
+                .overflow(Overflow.WRAP_WORD)
+                .build();
+
+        // each wide character takes a line of its own; it used to loop until out of memory
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 1, 4));
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> p.render(buffer.area(), buffer));
+    }
+
+    @Test
+    @DisplayName("WRAP_WORD does not hang when the hanging indent leaves less room than a wide character")
+    void wrapWordWideCharAfterHangingIndent() {
+        Paragraph p = Paragraph.builder()
+                .text(Text.from("   中文字"))
+                .overflow(Overflow.WRAP_WORD)
+                .build();
+
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 4, 6));
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> p.render(buffer.area(), buffer));
+    }
+
+    @Test
+    @DisplayName("WRAP_CHARACTER keeps graphemes together at their display width")
+    void wrapCharacterKeepsGraphemesWhole() {
+        assertClusterStaysWhole("👩‍💻", Overflow.WRAP_CHARACTER);
+        assertClusterStaysWhole("🇫🇷", Overflow.WRAP_CHARACTER);
+    }
+
+    @Test
+    @DisplayName("WRAP_WORD keeps graphemes together at their display width")
+    void wrapWordKeepsGraphemesWhole() {
+        assertClusterStaysWhole("👩‍💻", Overflow.WRAP_WORD);
+        assertClusterStaysWhole("🇫🇷", Overflow.WRAP_WORD);
+    }
+
+    private void assertClusterStaysWhole(String cluster, Overflow overflow) {
+        Paragraph paragraph = Paragraph.builder()
+                .text(Text.from(cluster + "X"))
+                .overflow(overflow)
+                .build();
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 2, 3));
+        paragraph.render(buffer.area(), buffer);
+
+        Buffer expected = Buffer.empty(buffer.area());
+        expected.setString(0, 0, cluster, Style.EMPTY);
+        expected.setString(0, 1, "X", Style.EMPTY);
+        BufferAssertions.assertThat(buffer).isEqualTo(expected);
     }
 
     private String extractLineText(Buffer buffer, int y) {
