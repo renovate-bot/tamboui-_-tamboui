@@ -247,4 +247,15 @@ class LineGaugeTest {
 
         BufferAssertions.assertThat(buffer).at(0, 0).hasForeground(Color.DARK_GRAY);
     }
+
+    @Test
+    @DisplayName("A label wider than the gauge is cut at the gauge's right edge")
+    void labelClippedToArea() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 20, 1));
+        LineGauge gauge = LineGauge.builder().percent(50).label("Downloading files").build();
+
+        gauge.render(new Rect(0, 0, 8, 1), buffer);
+
+        BufferAssertions.assertThat(buffer).hasRow(0, "Download            ");
+    }
 }

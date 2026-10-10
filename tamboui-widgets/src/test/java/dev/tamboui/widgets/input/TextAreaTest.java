@@ -20,6 +20,7 @@ import dev.tamboui.widgets.block.Borders;
 import dev.tamboui.widgets.syntax.SyntaxTheme;
 import dev.tamboui.widgets.syntax.TokenType;
 
+import static dev.tamboui.assertj.BufferAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TextAreaTest {
@@ -327,5 +328,16 @@ class TextAreaTest {
             }
         }
         return sb.toString().trim();
+    }
+
+    @Test
+    @DisplayName("A placeholder wider than the text area is cut at its right edge")
+    void placeholderClippedToArea() {
+        Buffer buffer = Buffer.empty(new Rect(0, 0, 20, 1));
+        TextArea textArea = TextArea.builder().placeholder("Type your message here").build();
+
+        textArea.render(new Rect(0, 0, 8, 1), buffer, new TextAreaState());
+
+        assertThat(buffer).hasRow(0, "Type you            ");
     }
 }
